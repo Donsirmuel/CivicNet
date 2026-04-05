@@ -1,6 +1,16 @@
 import apiClient from './apiClient';
 import type{ Post } from '../types';
 
+interface PaginatedResponse<T> {
+  results?: T[];
+}
+
+type ActionResponse = Record<string, unknown>;
+
+function normalizeListResponse<T>(data: T[] | PaginatedResponse<T>): T[] {
+  return Array.isArray(data) ? data : data.results || [];
+}
+
 export const postsService = {
   // Get all posts
   getPosts: async (params?: {
@@ -8,10 +18,9 @@ export const postsService = {
     search?: string;
   }): Promise<Post[]> => {
     try {
-      const response = await apiClient.get<any>('posts/', { params });
-      // Handle paginated response from DRF
-      return Array.isArray(response.data) ? response.data : response.data.results || [];
-    } catch (error) {
+      const response = await apiClient.get<Post[] | PaginatedResponse<Post>>('posts/', { params });
+      return normalizeListResponse(response.data);
+    } catch {
       throw new Error('Failed to fetch posts');
     }
   },
@@ -21,7 +30,7 @@ export const postsService = {
     try {
       const response = await apiClient.get<Post>(`posts/${id}/`);
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to fetch post');
     }
   },
@@ -35,7 +44,7 @@ export const postsService = {
     try {
       const response = await apiClient.post<Post>('posts/', data);
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to create post');
     }
   },
@@ -45,7 +54,7 @@ export const postsService = {
     try {
       const response = await apiClient.patch<Post>(`posts/${id}/`, data);
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to update post');
     }
   },
@@ -54,27 +63,27 @@ export const postsService = {
   deletePost: async (id: number): Promise<void> => {
     try {
       await apiClient.delete(`posts/${id}/`);
-    } catch (error) {
+    } catch {
       throw new Error('Failed to delete post');
     }
   },
 
   // Like post
-  likePost: async (id: number): Promise<any> => {
+  likePost: async (id: number): Promise<ActionResponse> => {
     try {
-      const response = await apiClient.post(`posts/${id}/like/`);
+      const response = await apiClient.post<ActionResponse>(`posts/${id}/like/`);
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to like post');
     }
   },
 
   // Unlike post
-  unlikePost: async (id: number): Promise<any> => {
+  unlikePost: async (id: number): Promise<ActionResponse> => {
     try {
-      const response = await apiClient.post(`posts/${id}/unlike/`);
+      const response = await apiClient.post<ActionResponse>(`posts/${id}/unlike/`);
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to unlike post');
     }
   },

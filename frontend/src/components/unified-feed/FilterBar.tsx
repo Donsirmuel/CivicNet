@@ -64,7 +64,7 @@ const contentTypeOptions: Array<{ value: CivicFeedFilters['contentType']; label:
   { value: 'official', label: 'Officials only' },
 ];
 
-export function getActiveFilterCount(filters: CivicFeedFilters) {
+function getActiveFilterCount(filters: CivicFeedFilters) {
   return [
     filters.scope !== 'all',
     filters.contentType !== 'all',

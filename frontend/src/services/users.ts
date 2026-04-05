@@ -7,7 +7,7 @@ export const usersService = {
     try {
       const response = await apiClient.get<User[]>('/users/', { params });
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to fetch users');
     }
   },
@@ -17,7 +17,7 @@ export const usersService = {
     try {
       const response = await apiClient.get<User>(`/users/${id}/`);
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to fetch user');
     }
   },
@@ -27,7 +27,7 @@ export const usersService = {
     try {
       const response = await apiClient.get<User>('/users/me/');
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to fetch current user');
     }
   },
@@ -37,7 +37,7 @@ export const usersService = {
     try {
       const response = await apiClient.get<OfficialMetrics>(`/users/${userId}/metrics/`);
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to fetch user metrics');
     }
   },
@@ -49,7 +49,7 @@ export const profilesService = {
     try {
       const response = await apiClient.get<UserProfile[]>('/profiles/');
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to fetch profiles');
     }
   },
@@ -59,7 +59,7 @@ export const profilesService = {
     try {
       const response = await apiClient.get<UserProfile>(`/profiles/${id}/`);
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to fetch profile');
     }
   },
@@ -69,7 +69,7 @@ export const profilesService = {
     try {
       const response = await apiClient.get<UserProfile>('/profiles/me/');
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to fetch current profile');
     }
   },
@@ -79,7 +79,7 @@ export const profilesService = {
     try {
       const response = await apiClient.patch<UserProfile>(`/profiles/${id}/`, data);
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to update profile');
     }
   },
@@ -89,7 +89,7 @@ export const profilesService = {
     try {
       const response = await apiClient.post<UserProfile>('/profiles/', data);
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to create profile');
     }
   },
@@ -101,7 +101,7 @@ export const jurisdictionService = {
     try {
       const response = await apiClient.get<OfficialJurisdiction[]>('/jurisdictions/');
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to fetch jurisdictions');
     }
   },
@@ -111,7 +111,7 @@ export const jurisdictionService = {
     try {
       const response = await apiClient.get<OfficialJurisdiction>(`/jurisdictions/${id}/`);
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to fetch jurisdiction');
     }
   },
@@ -121,7 +121,7 @@ export const jurisdictionService = {
     try {
       const response = await apiClient.get<OfficialJurisdiction>('/jurisdictions/me/');
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to fetch your jurisdiction');
     }
   },
@@ -131,7 +131,7 @@ export const jurisdictionService = {
     try {
       const response = await apiClient.post<OfficialJurisdiction>('/jurisdictions/', data);
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to create jurisdiction');
     }
   },
@@ -141,7 +141,7 @@ export const jurisdictionService = {
     try {
       const response = await apiClient.patch<OfficialJurisdiction>(`/jurisdictions/${id}/`, data);
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to update jurisdiction');
     }
   },

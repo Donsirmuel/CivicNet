@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Icon } from '../components/common';
 import type { Post } from '../components/issues/PostCard';
 import FeedList from '../components/unified-feed/FeedList';
 import { type CivicFeedFilters } from '../components/unified-feed/FilterBar';

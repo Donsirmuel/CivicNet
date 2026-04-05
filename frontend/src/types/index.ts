@@ -1,21 +1,26 @@
 // User types
 export interface User {
-  full_name: any;
-  name: any;
-  banner: any;
-  cover_image: any;
-  role: any;
-  jurisdiction: any;
-  phone: any;
-  avatar: any;
-  profile_picture: any;
-  bio: string;
-  location: string;
   id: number;
   username: string;
   email: string;
-  first_name: string;
-  last_name: string;
+  first_name?: string;
+  last_name?: string;
+  full_name?: string;
+  name?: string;
+  role?: string;
+  jurisdiction?: string;
+  bio?: string;
+  location?: string;
+  phone?: string;
+  phone_number?: string;
+  avatar?: string;
+  profile_picture?: string;
+  banner?: string;
+  cover_image?: string;
+  banner_image?: string;
+  date_joined?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface UserProfile {

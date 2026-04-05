@@ -31,6 +31,30 @@ const defaultSettings: SettingsState = {
   emailDigest: 'daily',
 };
 
+function ToggleSwitch({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onChange}
+      className={`relative inline-flex h-7 w-12 items-center rounded-full transition ${
+        checked ? 'bg-[var(--civic-primary)]' : 'bg-[var(--civic-border-strong)]'
+      }`}
+    >
+      <span
+        className={`inline-block h-5 w-5 rounded-full bg-white transition ${
+          checked ? 'translate-x-6' : 'translate-x-1'
+        }`}
+      />
+    </button>
+  );
+}
+
 function readSavedSettings() {
   const stored = localStorage.getItem('settings_state');
   if (!stored) return defaultSettings;
@@ -86,28 +110,6 @@ export default function SettingsPage() {
     if (!section) return;
     section.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
-
-  const Toggle = ({
-    checked,
-    onChange,
-  }: {
-    checked: boolean;
-    onChange: () => void;
-  }) => (
-    <button
-      type="button"
-      onClick={onChange}
-      className={`relative inline-flex h-7 w-12 items-center rounded-full transition ${
-        checked ? 'bg-[var(--civic-primary)]' : 'bg-[var(--civic-border-strong)]'
-      }`}
-    >
-      <span
-        className={`inline-block h-5 w-5 rounded-full bg-white transition ${
-          checked ? 'translate-x-6' : 'translate-x-1'
-        }`}
-      />
-    </button>
-  );
 
   const leftSidebar = (
     <div className="space-y-5">
@@ -240,7 +242,7 @@ export default function SettingsPage() {
                         Ask for fingerprint or face ID on sensitive actions.
                       </p>
                     </div>
-                    <Toggle checked={formData.biometricAuth} onChange={() => updateField('biometricAuth', !formData.biometricAuth)} />
+                    <ToggleSwitch checked={formData.biometricAuth} onChange={() => updateField('biometricAuth', !formData.biometricAuth)} />
                   </div>
                 </div>
 
@@ -252,7 +254,7 @@ export default function SettingsPage() {
                         Keep your name hidden in public comments while your account stays verified.
                       </p>
                     </div>
-                    <Toggle
+                    <ToggleSwitch
                       checked={formData.anonymousComments}
                       onChange={() => updateField('anonymousComments', !formData.anonymousComments)}
                     />
@@ -296,7 +298,7 @@ export default function SettingsPage() {
                         <p className="text-sm font-bold text-[var(--civic-text)]">{item.title}</p>
                         <p className="mt-2 text-sm leading-6 text-[var(--civic-muted)]">{item.description}</p>
                       </div>
-                      <Toggle
+                      <ToggleSwitch
                         checked={formData[item.key]}
                         onChange={() => updateField(item.key, !formData[item.key])}
                       />

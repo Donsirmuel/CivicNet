@@ -6,6 +6,7 @@ import StandardLayout from '../layouts/StandardLayout';
 import { getLocationString } from '../data/locationData';
 import { issuesService } from '../services';
 import { convertIssueToPost, formatTime } from '../utils/dataMappers';
+import type { Issue, StatusHistory } from '../types';
 
 const statusConfig: Record<IssueStatus, { label: string; icon: string; color: string }> = {
   reported: { label: 'Reported', icon: 'flag', color: 'bg-amber-100 text-amber-700 border-amber-300' },
@@ -32,8 +33,8 @@ export default function IssueDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
-  const [issue, setIssue] = useState<any>(null);
-  const [statusHistory, setStatusHistory] = useState<any[]>([]);
+  const [issue, setIssue] = useState<Issue | null>(null);
+  const [statusHistory, setStatusHistory] = useState<StatusHistory[]>([]);
 
   useEffect(() => {
     const fetchIssueDetails = async () => {
@@ -66,6 +67,11 @@ export default function IssueDetailsPage() {
   }, [id]);
 
   const issueView = useMemo(() => (issue ? convertIssueToPost(issue) : null), [issue]);
+
+  const handleCommentSubmit = () => {
+    if (!commentText.trim()) return;
+    setCommentText('');
+  };
 
   const relatedIssuesSidebar = (
     <div className="space-y-4">

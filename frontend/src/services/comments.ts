@@ -10,7 +10,7 @@ export const commentsService = {
     try {
       const response = await apiClient.get<Comment[]>('/comments/', { params });
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to fetch comments');
     }
   },
@@ -20,7 +20,7 @@ export const commentsService = {
     try {
       const response = await apiClient.get<Comment>(`/comments/${id}/`);
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to fetch comment');
     }
   },
@@ -35,7 +35,7 @@ export const commentsService = {
     try {
       const response = await apiClient.post<Comment>('/comments/', data);
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to create comment');
     }
   },
@@ -45,7 +45,7 @@ export const commentsService = {
     try {
       const response = await apiClient.patch<Comment>(`/comments/${id}/`, data);
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to update comment');
     }
   },
@@ -54,7 +54,7 @@ export const commentsService = {
   deleteComment: async (id: number): Promise<void> => {
     try {
       await apiClient.delete(`/comments/${id}/`);
-    } catch (error) {
+    } catch {
       throw new Error('Failed to delete comment');
     }
   },
@@ -66,7 +66,7 @@ export const commentsService = {
         params: { post_id: postId },
       });
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to fetch post comments');
     }
   },
@@ -78,7 +78,7 @@ export const commentsService = {
         params: { issue_id: issueId },
       });
       return response.data;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to fetch issue comments');
     }
   },

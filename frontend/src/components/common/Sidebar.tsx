@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Icon, Logo } from './';
 import { authService, usersService } from '../../services';
+import type { User } from '../../types';
 import {
   DEFAULT_NOTIFICATION_STATE,
   getNotificationEventName,
@@ -14,7 +15,7 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [unreadNotifications, setUnreadNotifications] = useState(() =>
     getUnreadCount(readNotificationState(DEFAULT_NOTIFICATION_STATE)),
   );

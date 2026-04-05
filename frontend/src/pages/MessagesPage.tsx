@@ -196,7 +196,7 @@ export default function MessagesPage() {
     setMessageText('');
   };
 
-  const ConversationList = ({ mobile = false }: { mobile?: boolean }) => (
+  const renderConversationList = (mobile = false) => (
     <div className={`flex h-full flex-col ${mobile ? 'space-y-4' : ''}`}>
       <div
         className={mobile ? 'civic-section' : 'border-b px-5 py-5'}
@@ -295,7 +295,7 @@ export default function MessagesPage() {
     </div>
   );
 
-  const ThreadPane = ({ mobile = false }: { mobile?: boolean }) =>
+  const renderThreadPane = (mobile = false) =>
     selectedConv ? (
       <div className="flex min-h-full flex-col">
         <div
@@ -434,7 +434,7 @@ export default function MessagesPage() {
         style={{ background: 'linear-gradient(180deg, var(--civic-bg) 0%, var(--civic-bg-deep) 100%)' }}
       >
         <div className="px-4 py-6 lg:hidden">
-          {mobileView === 'list' ? <ConversationList mobile /> : <ThreadPane mobile />}
+          {mobileView === 'list' ? renderConversationList(true) : renderThreadPane(true)}
         </div>
 
         <div className="hidden lg:grid lg:min-h-screen lg:grid-cols-[380px_minmax(0,1fr)]">
@@ -442,9 +442,9 @@ export default function MessagesPage() {
             className="sticky top-0 h-screen overflow-y-auto civic-scrollbar"
             style={{ borderRight: '1px solid var(--civic-border)', background: 'var(--civic-surface)' }}
           >
-            <ConversationList />
+            {renderConversationList()}
           </div>
-          <ThreadPane />
+          {renderThreadPane()}
         </div>
       </div>
     </StandardLayout>

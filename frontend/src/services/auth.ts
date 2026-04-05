@@ -1,4 +1,5 @@
 import apiClient from './apiClient';
+import { isAxiosError } from 'axios';
 import type{ User } from '../types';
 
 export interface LoginCredentials {
@@ -23,7 +24,7 @@ export const authService = {
   register: async (credentials: RegisterCredentials): Promise<{ token: string; user: User }> => {
     try {
       // Create user account
-      const userData: any = {
+      const userData: Record<string, unknown> = {
         username: credentials.username,
         password: credentials.password,
         first_name: credentials.first_name,
@@ -52,8 +53,10 @@ export const authService = {
         token,
         user: registerResponse.data,
       };
-    } catch (error: any) {
-      const errorMsg = error.response?.data ? JSON.stringify(error.response.data) : 'Registration failed';
+    } catch (error: unknown) {
+      const errorMsg = isAxiosError(error) && error.response?.data
+        ? JSON.stringify(error.response.data)
+        : 'Registration failed';
       throw new Error(`Registration failed: ${errorMsg}`);
     }
   },
@@ -75,7 +78,7 @@ export const authService = {
         token,
         user: userResponse.data,
       };
-    } catch (error) {
+    } catch {
       throw new Error('Login failed');
     }
   },
@@ -115,7 +118,7 @@ export const authService = {
         token,
         user,
       };
-    } catch (error) {
+    } catch {
       throw new Error('Google authentication failed');
     }
   },

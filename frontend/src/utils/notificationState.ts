@@ -29,7 +29,7 @@ export function readNotificationState<T>(fallback: T[]): T[] {
   }
 }
 
-export function writeNotificationState<T>(items: T[]) {
+export function writeNotificationState<T extends { read?: boolean; is_read?: boolean }>(items: T[]) {
   if (typeof window === 'undefined') return;
 
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ items }));
