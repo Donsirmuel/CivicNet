@@ -235,22 +235,27 @@ export default function OfficialProfilePage() {
               </div>
             </div>
 
-            <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <div className="rounded-md p-5" style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}>
-                <p className="text-3xl font-black tracking-[-0.04em] text-[var(--civic-text)]">{issueMetrics.totalAssigned}</p>
-                <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Open cases</p>
-              </div>
-              <div className="rounded-md p-5" style={{ background: 'var(--civic-surface-muted)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}>
-                <p className="text-3xl font-black tracking-[-0.04em] text-[var(--civic-text)]">{issueMetrics.resolved}</p>
-                <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Resolved cases</p>
-              </div>
-              <div className="rounded-md p-5" style={{ background: 'rgba(212,165,64,0.08)', boxShadow: 'inset 0 0 0 1px rgba(212,165,64,0.18)' }}>
-                <p className="text-3xl font-black tracking-[-0.04em] text-[var(--civic-text)]">{issueMetrics.resolutionRate.toFixed(0)}%</p>
-                <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Response rate</p>
-              </div>
-              <div className="rounded-md p-5" style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}>
-                <p className="text-3xl font-black tracking-[-0.04em] text-[var(--civic-text)]">{issueMetrics.avgResponseTime || 'N/A'}</p>
-                <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Avg. response</p>
+            <div className="mt-4 border-t border-[var(--civic-border)] pt-3">
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--civic-muted)]">
+                  <Icon name="folder_open" className="text-sm text-[var(--civic-primary)]" />
+                  Open cases <strong className="ml-1 text-sm font-black text-[var(--civic-text)]">{issueMetrics.totalAssigned}</strong>
+                </span>
+
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--civic-muted)]">
+                  <Icon name="task_alt" className="text-sm text-[var(--civic-primary)]" />
+                  Resolved <strong className="ml-1 text-sm font-black text-[var(--civic-text)]">{issueMetrics.resolved}</strong>
+                </span>
+
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--civic-muted)]">
+                  <Icon name="query_stats" className="text-sm text-[var(--civic-primary)]" />
+                  Response rate <strong className="ml-1 text-sm font-black text-[var(--civic-text)]">{issueMetrics.resolutionRate.toFixed(0)}%</strong>
+                </span>
+
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--civic-muted)]">
+                  <Icon name="timer" className="text-sm text-[var(--civic-primary)]" />
+                  Avg. response <strong className="ml-1 text-sm font-black text-[var(--civic-text)]">{issueMetrics.avgResponseTime || 'N/A'}</strong>
+                </span>
               </div>
             </div>
           </div>

@@ -329,67 +329,37 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-              <div className="flex items-center gap-3 rounded-md px-3 py-3" style={{ background: 'var(--civic-surface-soft)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}>
-                <span className="inline-flex size-8 items-center justify-center rounded-full bg-[var(--civic-primary-glow)] text-[var(--civic-primary)]">
-                  <Icon name="feed" className="text-base" />
+            <div className="mt-5 border-t border-[var(--civic-border)] pt-3">
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--civic-muted)]">
+                  <Icon name="feed" className="text-sm text-[var(--civic-primary)]" />
+                  Posts <strong className="ml-1 text-sm font-black text-[var(--civic-text)]">{posts.length}</strong>
                 </span>
-                <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Posts</p>
-                  <p className="text-sm font-bold text-[var(--civic-text)]">{posts.length}</p>
-                </div>
-              </div>
 
-              <div className="flex items-center gap-3 rounded-md px-3 py-3" style={{ background: 'var(--civic-surface-soft)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}>
-                <span className="inline-flex size-8 items-center justify-center rounded-full bg-[var(--civic-primary-glow)] text-[var(--civic-primary)]">
-                  <Icon name="flag" className="text-base" />
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--civic-muted)]">
+                  <Icon name="flag" className="text-sm text-[var(--civic-primary)]" />
+                  Issues <strong className="ml-1 text-sm font-black text-[var(--civic-text)]">{posts.filter((post) => post.type === 'issue').length}</strong>
                 </span>
-                <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Issues</p>
-                  <p className="text-sm font-bold text-[var(--civic-text)]">{posts.filter((post) => post.type === 'issue').length}</p>
-                </div>
-              </div>
 
-              <div className="flex items-center gap-3 rounded-md px-3 py-3" style={{ background: 'var(--civic-surface-soft)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}>
-                <span className="inline-flex size-8 items-center justify-center rounded-full bg-[var(--civic-gold-soft)] text-[var(--civic-gold)]">
-                  <Icon name="chat_bubble" className="text-base" />
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--civic-muted)]">
+                  <Icon name="chat_bubble" className="text-sm text-[var(--civic-gold)]" />
+                  Replies <strong className="ml-1 text-sm font-black text-[var(--civic-text)]">{posts.reduce((sum, post) => sum + post.stats.comments, 0)}</strong>
                 </span>
-                <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Replies</p>
-                  <p className="text-sm font-bold text-[var(--civic-text)]">{posts.reduce((sum, post) => sum + post.stats.comments, 0)}</p>
-                </div>
-              </div>
 
-              <div className="flex items-center gap-3 rounded-md px-3 py-3" style={{ background: 'var(--civic-surface-soft)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}>
-                <span className="inline-flex size-8 items-center justify-center rounded-full bg-[var(--civic-primary-glow)] text-[var(--civic-primary)]">
-                  <Icon name="alternate_email" className="text-base" />
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--civic-muted)]">
+                  <Icon name="alternate_email" className="text-sm text-[var(--civic-primary)]" />
+                  Username <strong className="ml-1 text-sm font-black text-[var(--civic-text)]">@{user.username || 'citizen'}</strong>
                 </span>
-                <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Username</p>
-                  <p className="truncate text-sm font-bold text-[var(--civic-text)]">@{user.username || 'citizen'}</p>
-                </div>
-              </div>
 
-              <div className="flex items-center gap-3 rounded-md px-3 py-3" style={{ background: 'var(--civic-surface-soft)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}>
-                <span className="inline-flex size-8 items-center justify-center rounded-full bg-[var(--civic-primary-glow)] text-[var(--civic-primary)]">
-                  <Icon name="location_on" className="text-base" />
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--civic-muted)]">
+                  <Icon name="location_on" className="text-sm text-[var(--civic-primary)]" />
+                  Location <strong className="ml-1 text-sm font-black text-[var(--civic-text)]">{user.location || 'Nigeria'}</strong>
                 </span>
-                <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Location</p>
-                  <p className="truncate text-sm font-bold text-[var(--civic-text)]">{user.location || 'Nigeria'}</p>
-                </div>
-              </div>
 
-              <div className="flex items-center gap-3 rounded-md px-3 py-3" style={{ background: 'var(--civic-surface-soft)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}>
-                <span className="inline-flex size-8 items-center justify-center rounded-full bg-[var(--civic-primary-glow)] text-[var(--civic-primary)]">
-                  <Icon name="calendar_month" className="text-base" />
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--civic-muted)]">
+                  <Icon name="calendar_month" className="text-sm text-[var(--civic-primary)]" />
+                  Joined <strong className="ml-1 text-sm font-black text-[var(--civic-text)]">{user?.date_joined ? new Date(user.date_joined).toLocaleDateString() : 'Recently joined'}</strong>
                 </span>
-                <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Joined</p>
-                  <p className="text-sm font-bold text-[var(--civic-text)]">
-                    {user?.date_joined ? new Date(user.date_joined).toLocaleDateString() : 'Recently joined'}
-                  </p>
-                </div>
               </div>
             </div>
           </div>
