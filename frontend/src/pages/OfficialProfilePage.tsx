@@ -349,7 +349,7 @@ export default function OfficialProfilePage() {
                     <Icon name="mail" className="mt-0.5 text-[var(--civic-primary)]" />
                     <div>
                       <p className="font-bold text-[var(--civic-text)]">Official address</p>
-                      <p className="mt-1 break-all text-[var(--civic-muted)]">{official.email || 'office@civicpulse.gov.ng'}</p>
+                      <p className="mt-1 break-all text-[var(--civic-muted)]">{official.email || 'office@civicnet.gov.ng'}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">

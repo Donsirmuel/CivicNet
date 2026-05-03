@@ -114,7 +114,7 @@ export default function RegisterPage() {
                   Speak up, share updates, and follow what matters in your area.
                 </h1>
                 <p className="mt-6 max-w-xl text-lg leading-8 text-[var(--civic-muted)]">
-                  Create your Civic Pulse account to post, report issues, and stay close to the conversations shaping your community.
+                  Create your CivicNet account to post, report issues, and stay close to the conversations shaping your community.
                 </p>
               </div>
             </div>
@@ -171,7 +171,7 @@ export default function RegisterPage() {
 
                 <div className="mt-8">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--civic-muted)]">
-                    Join Civic Pulse
+                    Join CivicNet
                   </p>
                   <h2 className="mt-3 text-3xl font-black tracking-[-0.04em] text-[var(--civic-text)]">
                     Create your account
@@ -281,7 +281,7 @@ export default function RegisterPage() {
                   style={{ background: 'linear-gradient(90deg, rgba(10,106,59,0.48) 0%, rgba(22,33,51,0.2) 66%, rgba(22,33,51,0.08) 100%)' }}
                 />
                 <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.14em] text-white/90">
-                  <span>Join civic pulse</span>
+                  <span>Join CivicNet</span>
                   <span>Get started</span>
                 </div>
               </div>
@@ -293,7 +293,7 @@ export default function RegisterPage() {
                 Report issues, share updates, and follow progress in your area.
               </h1>
               <p className="text-sm leading-6 text-[var(--civic-muted)]">
-                Join Civic Pulse to participate in local conversations and keep up with official responses.
+                Join CivicNet to participate in local conversations and keep up with official responses.
               </p>
 
               <div className="space-y-2">

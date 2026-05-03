@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: civic-connect-backend
+    name: civicnet-backend
     runtime: python
     plan: free
     rootDir: backend/civic_connect
@@ -22,7 +22,7 @@ services:
         sync: false
 
   - type: static
-    name: civic-connect-frontend
+    name: civicnet-frontend
     plan: free
     rootDir: frontend
     buildCommand: npm ci && npm run build

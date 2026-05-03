@@ -119,7 +119,7 @@ export default function ViewToolbar({
               type="search"
               value={searchValue}
               onChange={(event) => onSearchValueChange(event.target.value)}
-              placeholder="Search Civic Pulse"
+              placeholder="Search CivicNet"
               className="min-h-11 min-w-0 flex-1 appearance-none border-0 bg-transparent pr-2 text-sm text-[var(--civic-text)] placeholder:text-[var(--civic-muted)] outline-none ring-0 focus:outline-none focus:ring-0 sm:min-h-12"
               style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' }}
             />

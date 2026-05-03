@@ -52,7 +52,7 @@ export default function Logo({
         <p
           className={`${classes.title} font-black uppercase tracking-[-0.03em] leading-none text-[var(--civic-text)]`}
         >
-          Civic Pulse
+          CivicNet
         </p>
         {showTagline && (
           <p

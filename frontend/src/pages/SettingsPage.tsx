@@ -20,7 +20,8 @@ interface SettingsState {
 const defaultSettings: SettingsState = {
   fullName: 'Amina Yusuf Okonjo',
   voterId: '90F5 ***** 1102',
-  email: 'amina.okonjo@civicpulse.ng',
+  email: 'amina.okonjo@civicnet.ng',
+  
   theme: 'system',
   biometricAuth: true,
   anonymousComments: false,

@@ -193,7 +193,7 @@ export default function Sidebar() {
                 <span className="civic-rail-footer-link">Report</span>
               </div>
               <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-[var(--civic-muted)]/80">
-                Civic Pulse
+                CivicNet
               </p>
             </div>
           </div>
