@@ -21,7 +21,8 @@ services:
       - key: DATABASE_URL
         sync: false
 
-  - type: static
+  - type: web
+    runtime: static
     name: civicnet-frontend
     plan: free
     rootDir: frontend
