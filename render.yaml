@@ -2,7 +2,7 @@ services:
   - type: web
     name: civicnet-backend
     runtime: python
-    plan: free
+    plan: starter
     rootDir: backend/civic_connect
     buildCommand: pip install -r ../requirements.txt && python manage.py migrate && python manage.py collectstatic --noinput
     startCommand: gunicorn civic_connect.wsgi:application --bind 0.0.0.0:$PORT
