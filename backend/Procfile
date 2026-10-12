@@ -1,1 +1,0 @@
-web: gunicorn civic_connect.wsgi:application --bind 0.0.0.0:$PORT

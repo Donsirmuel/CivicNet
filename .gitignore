@@ -19,6 +19,7 @@ pnpm-debug.log*
 .env.*
 !.env.example
 !**/.env.example
+!.env.vps.example
 
 # Frontend
 frontend/node_modules/
@@ -44,6 +45,9 @@ frontend/*.md
 !frontend/README.md
 backend/*.md
 !backend/README.md
+
+# Local VPS postgres data (bind mount from docker-compose.yml) — never commit
+/data/
 
 # Misc build/cache
 *.tmp

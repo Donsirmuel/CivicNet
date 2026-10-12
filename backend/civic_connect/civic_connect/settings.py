@@ -25,9 +25,12 @@ def _split_csv(raw: str) -> list[str]:
 
 
 ALLOWED_HOSTS = _split_csv(config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=str))
-RENDER_EXTERNAL_HOSTNAME = config('RENDER_EXTERNAL_HOSTNAME', default='', cast=str)
-if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+# Reverse proxies (VPS nginx, etc.) may inject the public hostname via env.
+EXTERNAL_HOSTNAME = config(
+    'EXTERNAL_HOSTNAME', default=config('RENDER_EXTERNAL_HOSTNAME', default='', cast=str), cast=str
+)
+if EXTERNAL_HOSTNAME and EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(EXTERNAL_HOSTNAME)
 
 
 # Application definition

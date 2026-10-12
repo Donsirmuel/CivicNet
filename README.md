@@ -2,7 +2,7 @@
 
 > A civic network for developing democracies. Citizens report local issues, verified officials reply on the record — from ward to federal level. Nothing goes silent.
 
-**Stack:** Django · DRF · PostgreSQL (prod) / SQLite (dev) · React 19 + Vite + Tailwind · Render
+**Stack:** Django · DRF · PostgreSQL (prod) / SQLite (dev) · React 19 + Vite + Tailwind · Docker Compose (VPS)
 
 ## The problem
 
@@ -34,7 +34,7 @@ Roles live in `UserProfile.role` (`citizen` / `official`); verification in `User
 | Backend | Django 6, DRF, `rest_framework.authtoken`, django-cors-headers, Whitenoise, Gunicorn |
 | Database | SQLite locally → PostgreSQL in production via `dj-database-url` + `psycopg2-binary` |
 | Frontend | React 19, Vite 7, React Router 7, Tailwind 3, Axios, Framer Motion, Lucide |
-| Deploy | `render.yaml` Blueprint: `civicnet-backend` (Python) + `civicnet-frontend` (static, SPA rewrite) |
+| Deploy | `docker-compose.yml` + `deploy.sh`: Postgres + Gunicorn backend + nginx SPA frontend on one VPS |
 
 ## Data model
 
@@ -132,9 +132,17 @@ npm run dev                        # → http://localhost:5173
 
 Environment variables are documented in `backend/civic_connect/.env.example` and `frontend/.env.example` (placeholders only — real secrets stay out of git).
 
-## Deployment
+## Deployment (VPS)
 
-Split deploy from one Blueprint (`render.yaml`): Django API as a Render Web Service, React app as a Render Static Site. Set `DATABASE_URL`, `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS` on the backend and `VITE_API_URL` on the frontend. Step-by-step: `DEPLOYMENT_RENDER.md`. After first deploy, paste the live URLs at the top of this file.
+One VPS, one command. `docker-compose.yml` runs Postgres 16, the Gunicorn backend, and an nginx frontend that serves the SPA and proxies `/api`, `/admin`, `/healthz` to Django (same-origin, so no CORS dance).
+
+```bash
+cp .env.vps.example .env.vps   # fill in secrets + domain
+./deploy.sh                    # build, migrate, start, health-check
+./deploy.sh --createsuperuser  # admin account
+```
+
+`deploy.sh` generates secrets into `.env.vps` (gitignored, never commit it) on first run. Postgres data lives in `./data/postgres` in the work tree (also gitignored — back it up with the rest of the VPS). Set `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS` to your domain, and flip `SECURE_SSL_REDIRECT=True` once TLS terminates in front. After first deploy, paste the live URL at the top of this file.
 
 ## Project structure
 
@@ -154,7 +162,10 @@ Split deploy from one Blueprint (`render.yaml`): Django API as a Render Web Serv
 ├── docs/
 │   ├── er-diagram.mmd
 │   └── screenshots/             # add 01-landing / 02-feed / 03-issue / 04-dashboard.png
-├── render.yaml
+├── docker-compose.yml
+├── deploy.sh (+ .env.vps.example)
+├── backend/Dockerfile
+├── frontend/Dockerfile + nginx.conf
 └── README.md
 ```
 
