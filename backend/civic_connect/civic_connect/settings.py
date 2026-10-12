@@ -179,6 +179,9 @@ CSRF_TRUSTED_ORIGINS = _split_csv(
     )
 )
 
+# Google OAuth (verify Sign-In ID tokens from the frontend)
+GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID', default='', cast=str)
+
 # Render and other reverse proxies send scheme via this header.
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 

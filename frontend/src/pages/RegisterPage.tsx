@@ -1,5 +1,5 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import CivicGoogleButton from '../components/auth/CivicGoogleButton';
 import { Button, Input, Logo, Icon } from '../components/common';
 import { authService } from '../services';
@@ -15,6 +15,9 @@ const registerHeroImage =
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo =
+    (location.state as { from?: string } | null)?.from ?? '/feed';
   const [formData, setFormData] = useState({
     fullName: '',
     username: '',
@@ -49,7 +52,7 @@ export default function RegisterPage() {
         last_name: lastName,
       });
 
-      navigate('/feed');
+      navigate(redirectTo, { replace: true });
     } catch (err) {
       console.error('Registration error:', err);
       const message =
@@ -65,7 +68,7 @@ export default function RegisterPage() {
       setLoading(true);
       setError('');
       await authService.googleAuth(credential);
-      navigate('/feed');
+      navigate(redirectTo, { replace: true });
     } catch (err) {
       console.error('Google auth error:', err);
       setError('Google sign-up failed. Please try again.');
@@ -110,7 +113,7 @@ export default function RegisterPage() {
 
               <div className="mt-24 max-w-2xl">
                 <span className="civic-chip-active">Create your account</span>
-                <h1 className="mt-6 text-6xl font-black leading-[0.95] tracking-[-0.06em] text-[var(--civic-text-strong)]">
+                <h1 className="font-display mt-6 text-6xl leading-[0.95] tracking-[-0.02em] text-[var(--civic-text-strong)]">
                   Speak up, share updates, and follow what matters in your area.
                 </h1>
                 <p className="mt-6 max-w-xl text-lg leading-8 text-[var(--civic-muted)]">
@@ -173,7 +176,7 @@ export default function RegisterPage() {
                   <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--civic-muted)]">
                     Join CivicNet
                   </p>
-                  <h2 className="mt-3 text-3xl font-black tracking-[-0.04em] text-[var(--civic-text)]">
+                  <h2 className="font-display mt-3 text-3xl tracking-[-0.02em] text-[var(--civic-text)]">
                     Create your account
                   </h2>
                 </div>
@@ -289,7 +292,7 @@ export default function RegisterPage() {
 
             <div className="mt-6 space-y-4">
               <span className="civic-chip-active">Create your account</span>
-              <h1 className="text-3xl font-black leading-tight tracking-[-0.04em] text-[var(--civic-text)]">
+              <h1 className="font-display text-3xl leading-tight tracking-[-0.02em] text-[var(--civic-text)]">
                 Report issues, share updates, and follow progress in your area.
               </h1>
               <p className="text-sm leading-6 text-[var(--civic-muted)]">

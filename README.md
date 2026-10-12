@@ -161,5 +161,5 @@ Split deploy from one Blueprint (`render.yaml`): Django API as a Render Web Serv
 ## Roadmap
 
 - App screenshots (`docs/screenshots/`) — 1440×900, no personal data
-- Google sign-in end-to-end (frontend button wired; backend `auth/google/` token exchange pending)
+- Google sign-in end-to-end (`POST /api/auth/google/` verifies the ID token, creates the account + profile on first login, returns a DRF token; set `GOOGLE_CLIENT_ID` alongside `VITE_GOOGLE_CLIENT_ID`)
 - Backend test coverage (`connectapp/tests.py` is still the Django placeholder)

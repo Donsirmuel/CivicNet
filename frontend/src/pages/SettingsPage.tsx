@@ -116,7 +116,7 @@ export default function SettingsPage() {
     <div className="space-y-5">
       <div className="civic-section">
         <p className="civic-label">Settings</p>
-        <h2 className="mt-3 text-2xl font-black tracking-[-0.03em] text-[var(--civic-text)]">Preferences</h2>
+        <h2 className="mt-3 font-display text-2xl tracking-[-0.01em] text-[var(--civic-text)]">Preferences</h2>
         <p className="mt-3 text-sm leading-6 text-[var(--civic-muted)]">
           Update your account details, alert choices, and privacy settings.
         </p>
@@ -150,7 +150,7 @@ export default function SettingsPage() {
               <div className="flex flex-col gap-3 border-b pb-6 sm:flex-row sm:items-end sm:justify-between" style={{ borderColor: 'var(--civic-border)' }}>
                 <div>
                   <p className="civic-label">Your account</p>
-                  <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] text-[var(--civic-text)]">Settings</h1>
+                  <h1 className="mt-3 font-display text-4xl tracking-[-0.02em] text-[var(--civic-text)]">Settings</h1>
                   <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--civic-muted)]">
                     Change your details, choose what you want to receive, and save how the app works for you.
                   </p>
@@ -181,11 +181,11 @@ export default function SettingsPage() {
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="rounded-[20px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] px-5 py-5">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--civic-muted)]">Theme</p>
-                  <p className="mt-2 text-base font-black tracking-[-0.03em] text-[var(--civic-text)] capitalize">{formData.theme}</p>
+                  <p className="mt-2 text-base font-bold tracking-[-0.01em] text-[var(--civic-text)] capitalize">{formData.theme}</p>
                 </div>
                 <div className="rounded-[20px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] px-5 py-5">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--civic-muted)]">Alerts</p>
-                  <p className="mt-2 text-base font-black tracking-[-0.03em] text-[var(--civic-text)]">
+                  <p className="mt-2 text-base font-bold tracking-[-0.01em] text-[var(--civic-text)]">
                     {formData.officialResponses || formData.civicMentions || formData.legislativeAlerts || formData.constituencyUpdates
                       ? 'On'
                       : 'Off'}
@@ -193,7 +193,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="rounded-[20px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] px-5 py-5">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--civic-muted)]">Privacy</p>
-                  <p className="mt-2 text-base font-black tracking-[-0.03em] text-[var(--civic-text)]">
+                  <p className="mt-2 text-base font-bold tracking-[-0.01em] text-[var(--civic-text)]">
                     {formData.biometricAuth ? 'Protected' : 'Standard'}
                   </p>
                 </div>
@@ -203,7 +203,7 @@ export default function SettingsPage() {
                 <section id="identity" className="space-y-5">
                 <div className="border-b pb-4" style={{ borderColor: 'var(--civic-border)' }}>
                   <p className="civic-label">Account</p>
-                  <h2 className="mt-3 text-2xl font-black tracking-[-0.03em] text-[var(--civic-text)]">Account details</h2>
+                  <h2 className="mt-3 font-display text-2xl tracking-[-0.01em] text-[var(--civic-text)]">Account details</h2>
                 </div>
 
               <div className="grid gap-5 lg:grid-cols-2">
@@ -254,7 +254,7 @@ export default function SettingsPage() {
                 <section id="security" className="space-y-5">
                 <div className="border-b pb-4" style={{ borderColor: 'var(--civic-border)' }}>
                   <p className="civic-label">Privacy</p>
-                  <h2 className="mt-3 text-2xl font-black tracking-[-0.03em] text-[var(--civic-text)]">Privacy and access</h2>
+                  <h2 className="mt-3 font-display text-2xl tracking-[-0.01em] text-[var(--civic-text)]">Privacy and access</h2>
                 </div>
 
               <div className="grid gap-5 lg:grid-cols-2">
@@ -290,7 +290,7 @@ export default function SettingsPage() {
                 <section id="alerts" className="space-y-5">
                 <div className="border-b pb-4" style={{ borderColor: 'var(--civic-border)' }}>
                   <p className="civic-label">Alerts</p>
-                  <h2 className="mt-3 text-2xl font-black tracking-[-0.03em] text-[var(--civic-text)]">What you want to receive</h2>
+                  <h2 className="mt-3 font-display text-2xl tracking-[-0.01em] text-[var(--civic-text)]">What you want to receive</h2>
                 </div>
 
               <div className="grid gap-4 md:grid-cols-2">
@@ -351,7 +351,7 @@ export default function SettingsPage() {
                 <section id="display" className="space-y-5">
                 <div className="border-b pb-4" style={{ borderColor: 'var(--civic-border)' }}>
                   <p className="civic-label">Display</p>
-                  <h2 className="mt-3 text-2xl font-black tracking-[-0.03em] text-[var(--civic-text)]">App appearance</h2>
+                  <h2 className="mt-3 font-display text-2xl tracking-[-0.01em] text-[var(--civic-text)]">App appearance</h2>
                 </div>
 
               <div className="grid gap-4 md:grid-cols-3">

@@ -150,7 +150,7 @@ export default function NotificationsPage() {
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                       <p className="civic-label">Notifications</p>
-                      <h1 className="mt-3 text-4xl font-black tracking-[-0.05em] text-[var(--civic-text)]">Updates that need your attention</h1>
+                      <h1 className="mt-3 font-display text-4xl tracking-[-0.02em] text-[var(--civic-text)]">Updates that need your attention</h1>
                       <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--civic-muted)]">
                         Follow replies, account changes, and mentions without losing the thread.
                       </p>
@@ -179,7 +179,7 @@ export default function NotificationsPage() {
                         <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--civic-muted)]">
                           {label}
                         </p>
-                        <p className="mt-2 text-2xl font-black tracking-[-0.04em] text-[var(--civic-text)]">
+                        <p className="mt-2 font-display text-2xl tracking-[-0.02em] text-[var(--civic-text)]">
                           {value as number}
                         </p>
                       </div>
@@ -276,15 +276,15 @@ export default function NotificationsPage() {
                 <div className="mt-4 space-y-3">
                   <div className="rounded-[20px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] p-4">
                     <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Unread</p>
-                    <p className="mt-2 text-xl font-black tracking-[-0.04em] text-[var(--civic-text)]">{unreadCount}</p>
+                    <p className="mt-2 font-display text-xl tracking-[-0.02em] text-[var(--civic-text)]">{unreadCount}</p>
                   </div>
                   <div className="rounded-[20px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] p-4">
                     <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Visible</p>
-                    <p className="mt-2 text-xl font-black tracking-[-0.04em] text-[var(--civic-text)]">{filteredNotifications.length}</p>
+                    <p className="mt-2 font-display text-xl tracking-[-0.02em] text-[var(--civic-text)]">{filteredNotifications.length}</p>
                   </div>
                   <div className="rounded-[20px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] p-4">
                     <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]">All items</p>
-                    <p className="mt-2 text-xl font-black tracking-[-0.04em] text-[var(--civic-text)]">{notifications.length}</p>
+                    <p className="mt-2 font-display text-xl tracking-[-0.02em] text-[var(--civic-text)]">{notifications.length}</p>
                   </div>
                 </div>
               </section>

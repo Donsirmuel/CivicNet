@@ -153,7 +153,7 @@ export default function PostCard({ post, onLike, onComment, onShare, onBookmark 
                 <button
                   type="button"
                   onClick={handleProfileClick}
-                  className="truncate text-left text-[15px] font-black tracking-[-0.02em] text-[var(--civic-text)]"
+                  className="truncate text-left text-[15px] font-bold tracking-[-0.01em] text-[var(--civic-text)]"
                 >
                   {post.author.name}
                 </button>
@@ -210,7 +210,7 @@ export default function PostCard({ post, onLike, onComment, onShare, onBookmark 
 
         <div className="space-y-3">
           {post.title && (
-            <h3 className="max-w-3xl text-[1.15rem] font-black leading-tight tracking-[-0.03em] text-[var(--civic-text-strong)] sm:text-[1.3rem]">
+            <h3 className="max-w-3xl font-display text-[1.15rem] leading-snug tracking-[-0.01em] text-[var(--civic-text-strong)] sm:text-[1.3rem]">
               {post.title}
             </h3>
           )}

@@ -26,7 +26,7 @@ export default function FeedList({
           <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-[var(--civic-surface-inset)]">
             <span className="material-symbols-outlined text-4xl text-[var(--civic-muted)]">travel_explore</span>
           </div>
-          <h3 className="mt-5 text-xl font-black tracking-[-0.03em] text-[var(--civic-text)]">{emptyTitle}</h3>
+          <h3 className="mt-5 font-display text-xl tracking-[-0.01em] text-[var(--civic-text)]">{emptyTitle}</h3>
           <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[var(--civic-muted)]">{emptyDescription}</p>
         </div>
       </div>

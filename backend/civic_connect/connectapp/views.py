@@ -1,13 +1,109 @@
 from rest_framework import viewsets, permissions, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.authtoken.models import Token
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
+from google.oauth2 import id_token as google_id_token
+from google.auth.transport import requests as google_requests
 from .models import UserProfile, Issue, Post, Comment, Message, Notification, BookmarkedItem, StatusHistory, OfficialJurisdiction
 from .serializers import (
     UserSerializer, UserProfileSerializer, IssueSerializer, PostSerializer,
     CommentSerializer, MessageSerializer, NotificationSerializer, BookmarkedItemSerializer, StatusHistorySerializer, OfficialJurisdictionSerializer
 )
+
+
+class GoogleAuthView(APIView):
+    """Exchange a Google Sign-In ID token for a DRF auth token.
+
+    Frontend sends ``{"id_token": "<Google credential>"}`` and receives
+    ``{"token": "<drf-token>", "user": {...}}`` — the same shape as the
+    normal login flow, so the frontend needs no changes.
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        raw_token = request.data.get('id_token')
+        if not raw_token:
+            return Response(
+                {'error': 'id_token is required'}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            claims = google_id_token.verify_oauth2_token(
+                raw_token,
+                google_requests.Request(),
+                settings.GOOGLE_CLIENT_ID or None,
+            )
+        except ValueError:
+            return Response(
+                {'error': 'Invalid Google ID token'}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not claims.get('email'):
+            return Response(
+                {'error': 'Google account has no email address'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if claims.get('email_verified') is False:
+            return Response(
+                {'error': 'Google email is not verified'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        email = claims['email']
+        user, created = User.objects.get_or_create(
+            email=email,
+            defaults={
+                'username': self._unique_username(email, claims.get('sub', '')),
+                'first_name': claims.get('given_name', ''),
+                'last_name': claims.get('family_name', ''),
+            },
+        )
+        if created:
+            user.set_unusable_password()
+            user.save()
+
+        UserProfile.objects.get_or_create(
+            user=user,
+            defaults={
+                'role': 'citizen',
+                'avatar_url': claims.get('picture', ''),
+            },
+        )
+
+        token, _ = Token.objects.get_or_create(user=user)
+        return Response({'token': token.key, 'user': UserSerializer(user).data})
+
+    @staticmethod
+    def _unique_username(email, sub):
+        base = email.split('@')[0][:140] or f'google-{sub[:12]}'
+        username = base
+        suffix = 1
+        while User.objects.filter(username=username).exists():
+            suffix += 1
+            username = f'{base[:140]}-{suffix}'
+        return username
+
+
+def _notify(user, notification_type, title, message, actor=None, post=None, issue=None):
+    """Create a notification unless it would notify the actor themselves."""
+    if user is None:
+        return
+    if actor is not None and user.pk == actor.pk:
+        return
+    Notification.objects.create(
+        user=user,
+        notification_type=notification_type,
+        title=title,
+        message=message,
+        actor=actor,
+        post=post,
+        issue=issue,
+    )
 
 
 class IsAssignedOfficialOrReadOnly(permissions.BasePermission):
@@ -120,6 +216,14 @@ class PostViewSet(viewsets.ModelViewSet):
         post = self.get_object()
         post.likes += 1
         post.save()
+        _notify(
+            post.author,
+            'like',
+            'Someone liked your post',
+            f'{request.user.username} liked your post.',
+            actor=request.user,
+            post=post,
+        )
         return Response({'status': 'post liked', 'likes': post.likes})
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
@@ -148,6 +252,14 @@ class IssueViewSet(viewsets.ModelViewSet):
         issue = self.get_object()
         issue.upvotes += 1
         issue.save()
+        _notify(
+            issue.created_by,
+            'like',
+            'Someone upvoted your issue',
+            f'{request.user.username} upvoted "{issue.title}".',
+            actor=request.user,
+            issue=issue,
+        )
         return Response({'status': 'issue upvoted', 'upvotes': issue.upvotes})
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
@@ -162,6 +274,14 @@ class IssueViewSet(viewsets.ModelViewSet):
         issue = self.get_object()
         issue.upvotes += 1
         issue.save()
+        _notify(
+            issue.created_by,
+            'like',
+            'Someone liked your issue',
+            f'{request.user.username} liked "{issue.title}".',
+            actor=request.user,
+            issue=issue,
+        )
         return Response({'status': 'issue liked', 'upvotes': issue.upvotes})
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
@@ -185,6 +305,16 @@ class IssueViewSet(viewsets.ModelViewSet):
         issue.status = new_status
         issue.save()
 
+        _notify(
+            issue.created_by,
+            'comment',
+            f'Your issue is now {new_status.replace("_", " ")}',
+            f'{request.user.username} updated "{issue.title}".'
+            + (f' Note: {note}' if note else ''),
+            actor=request.user,
+            issue=issue,
+        )
+
         return Response({'status': 'issue status updated', 'new_status': new_status})
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
@@ -195,6 +325,14 @@ class IssueViewSet(viewsets.ModelViewSet):
             assigned_to = get_object_or_404(User, id=assigned_to_id)
             issue.assigned_to = assigned_to
             issue.save()
+            _notify(
+                assigned_to,
+                'mention',
+                'An issue was assigned to you',
+                f'{request.user.username} assigned "{issue.title}" to you.',
+                actor=request.user,
+                issue=issue,
+            )
             return Response({'status': 'issue assigned', 'assigned_to': assigned_to.username})
         return Response({'error': 'assigned_to_id required'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -204,6 +342,14 @@ class IssueViewSet(viewsets.ModelViewSet):
         issue.assigned_to = request.user
         issue.status = 'under_review'
         issue.save()
+        _notify(
+            issue.created_by,
+            'mention',
+            'An official picked up your issue',
+            f'{request.user.username} is now reviewing "{issue.title}".',
+            actor=request.user,
+            issue=issue,
+        )
         return Response({'status': 'issue assigned to you', 'assigned_to': request.user.username})
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
@@ -230,7 +376,36 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        comment = serializer.save(author=self.request.user)
+        actor = self.request.user
+        if comment.post_id:
+            _notify(
+                comment.post.author,
+                'comment',
+                'Someone commented on your post',
+                f'{actor.username} commented on your post.',
+                actor=actor,
+                post=comment.post,
+            )
+        if comment.issue_id:
+            _notify(
+                comment.issue.created_by,
+                'comment',
+                'Someone commented on your issue',
+                f'{actor.username} commented on "{comment.issue.title}".',
+                actor=actor,
+                issue=comment.issue,
+            )
+        if comment.parent_id:
+            _notify(
+                comment.parent.author,
+                'comment',
+                'Someone replied to your comment',
+                f'{actor.username} replied to your comment.',
+                actor=actor,
+                post=comment.post,
+                issue=comment.issue,
+            )
 
     def get_queryset(self):
         queryset = Comment.objects.all()
@@ -286,7 +461,14 @@ class MessageViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(sender=self.request.user)
+        message = serializer.save(sender=self.request.user)
+        _notify(
+            message.receiver,
+            'message',
+            'You have a new message',
+            f'{self.request.user.username} sent you a message.',
+            actor=self.request.user,
+        )
 
     def get_queryset(self):
         user = self.request.user

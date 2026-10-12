@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     UserViewSet, UserProfileViewSet, PostViewSet, IssueViewSet,
     CommentViewSet, MessageViewSet, NotificationViewSet, BookmarkedItemViewSet,
-    StatusHistoryViewSet, OfficialJurisdictionViewSet
+    StatusHistoryViewSet, OfficialJurisdictionViewSet, GoogleAuthView
 )
 
 router = DefaultRouter()
@@ -20,4 +20,5 @@ router.register(r'jurisdictions', OfficialJurisdictionViewSet, basename='jurisdi
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('auth/google/', GoogleAuthView.as_view(), name='google_auth'),
 ]

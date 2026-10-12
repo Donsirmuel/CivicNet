@@ -145,7 +145,7 @@ export default function IssueDetailsPage() {
           </button>
           <div>
             <p className="civic-label">Issue record</p>
-            <h1 className="mt-1 text-xl font-black tracking-tight text-[var(--civic-text)]">Civic Case File</h1>
+            <h1 className="mt-1 text-xl font-bold tracking-[-0.01em] text-[var(--civic-text)]">Civic Case File</h1>
             <p className="text-xs text-[var(--civic-muted)]">Issue #{issue.id}</p>
           </div>
         </div>
@@ -167,7 +167,7 @@ export default function IssueDetailsPage() {
               </div>
 
               <p className="civic-label">Issue summary</p>
-              <h2 className="mt-2 text-3xl font-black tracking-tight text-[var(--civic-text-strong)]">{issue.title || issue.description}</h2>
+              <h2 className="mt-2 font-display text-3xl tracking-[-0.02em] text-[var(--civic-text-strong)]">{issue.title || issue.description}</h2>
               <p className="mt-4 text-base leading-8 text-[var(--civic-muted)]">{issue.description}</p>
 
               <div className="mt-5 flex flex-wrap items-center gap-2">

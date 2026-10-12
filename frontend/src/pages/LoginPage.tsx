@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import CivicGoogleButton from '../components/auth/CivicGoogleButton';
 import { Button, Input, Logo, Icon } from '../components/common';
 import { authService } from '../services';
@@ -15,6 +15,9 @@ const loginHeroImage =
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo =
+    (location.state as { from?: string } | null)?.from ?? '/feed';
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -27,7 +30,7 @@ export default function LoginPage() {
 
     try {
       await authService.login({ username, password });
-      navigate('/feed');
+      navigate(redirectTo, { replace: true });
     } catch (err) {
       console.error('Login error:', err);
       setError('We could not sign you in. Check your details and try again.');
@@ -42,7 +45,7 @@ export default function LoginPage() {
 
     try {
       await authService.googleAuth(credential);
-      navigate('/feed');
+      navigate(redirectTo, { replace: true });
     } catch (err) {
       console.error('Google auth error:', err);
       setError('Google sign-in failed. Please try again.');
@@ -87,7 +90,7 @@ export default function LoginPage() {
 
               <div className="mt-24 max-w-2xl">
                 <span className="civic-chip-active">Live platform access</span>
-                <h1 className="mt-6 text-6xl font-black leading-[0.95] tracking-[-0.06em] text-[var(--civic-text-strong)]">
+                <h1 className="font-display mt-6 text-6xl leading-[0.95] tracking-[-0.02em] text-[var(--civic-text-strong)]">
                   Follow local issues, official replies, and community updates in one place.
                 </h1>
                 <p className="mt-6 max-w-xl text-lg leading-8 text-[var(--civic-muted)]">
@@ -99,7 +102,7 @@ export default function LoginPage() {
             <div className="relative z-10 mt-16 grid grid-cols-3 gap-4">
               {authStats.map((item) => (
                 <div key={item.label} className="rounded-md px-4 py-5" style={{ background: 'var(--civic-surface)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}>
-                  <p className="text-4xl font-black tracking-[-0.05em] text-[var(--civic-text)]">{item.value}</p>
+                  <p className="font-display text-4xl tracking-[-0.02em] text-[var(--civic-text)]">{item.value}</p>
                   <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--civic-muted)]">{item.label}</p>
                 </div>
               ))}
@@ -144,7 +147,7 @@ export default function LoginPage() {
                   <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--civic-muted)]">
                     Access your account
                   </p>
-                  <h2 className="mt-3 text-3xl font-black tracking-[-0.04em] text-[var(--civic-text)]">
+                  <h2 className="font-display mt-3 text-3xl tracking-[-0.02em] text-[var(--civic-text)]">
                     Welcome back
                   </h2>
                 </div>
@@ -237,7 +240,7 @@ export default function LoginPage() {
 
             <div className="mt-6 space-y-4">
               <span className="civic-chip-active">Live platform access</span>
-              <h1 className="text-3xl font-black leading-tight tracking-[-0.04em] text-[var(--civic-text)]">
+              <h1 className="font-display text-3xl leading-tight tracking-[-0.02em] text-[var(--civic-text)]">
                 Follow local issues and official replies in one place.
               </h1>
               <p className="text-sm leading-6 text-[var(--civic-muted)]">
@@ -251,7 +254,7 @@ export default function LoginPage() {
                     className="rounded-md px-3 py-3"
                     style={{ background: 'var(--civic-surface)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}
                   >
-                    <p className="text-xl font-black tracking-[-0.04em] text-[var(--civic-text)]">{item.value}</p>
+                    <p className="font-display text-xl tracking-[-0.02em] text-[var(--civic-text)]">{item.value}</p>
                     <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--civic-muted)]">
                       {item.label}
                     </p>

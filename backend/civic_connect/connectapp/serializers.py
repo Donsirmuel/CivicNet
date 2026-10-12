@@ -65,10 +65,18 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class CommentSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     replies = serializers.SerializerMethodField()
+    post_id = serializers.PrimaryKeyRelatedField(
+        queryset=Post.objects.all(), source='post', write_only=True, required=False,
+        allow_null=True,
+    )
+    issue_id = serializers.PrimaryKeyRelatedField(
+        queryset=Issue.objects.all(), source='issue', write_only=True, required=False,
+        allow_null=True,
+    )
 
     class Meta:
         model = Comment
-        fields = ['id', 'content', 'author', 'likes', 'parent', 'replies', 'created_at', 'updated_at']
+        fields = ['id', 'content', 'author', 'likes', 'parent', 'post_id', 'issue_id', 'replies', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at', 'author']
 
     def get_replies(self, obj):
@@ -111,10 +119,13 @@ class IssueSerializer(serializers.ModelSerializer):
 class MessageSerializer(serializers.ModelSerializer):
     sender = UserSerializer(read_only=True)
     receiver = UserSerializer(read_only=True)
+    receiver_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(), source='receiver', write_only=True
+    )
 
     class Meta:
         model = Message
-        fields = ['id', 'sender', 'receiver', 'content', 'is_read', 'created_at']
+        fields = ['id', 'sender', 'receiver', 'receiver_id', 'content', 'is_read', 'created_at']
         read_only_fields = ['id', 'created_at', 'sender']
 
 

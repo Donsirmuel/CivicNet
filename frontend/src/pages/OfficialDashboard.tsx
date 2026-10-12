@@ -173,7 +173,7 @@ export default function OfficialDashboard() {
       <div className="min-h-screen space-y-8 px-6 py-6">
         <div>
           <p className="civic-label">Administrative interface</p>
-          <h1 className="mt-2 text-4xl font-black tracking-tight text-slate-900">Official Dashboard</h1>
+          <h1 className="mt-2 font-display text-4xl tracking-[-0.02em] text-slate-900">Official Dashboard</h1>
           <p className="mt-2 text-slate-600">
             Manage assigned issues, monitor progress, and maintain public trust through timely response.
           </p>

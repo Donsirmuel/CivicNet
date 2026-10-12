@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { ProtectedRoute } from './components/common';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -29,16 +30,20 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/feed" element={<TimelinePage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/profile/official/:id" element={<OfficialProfilePage />} />
-          <Route path="/notifications" element={<NotificationsPage />} />
-          <Route path="/explore" element={<ExplorePage />} />
-          <Route path="/messages" element={<MessagesPage />} />
-          <Route path="/post/:id" element={<PostDetailsPage />} />
-          <Route path="/issue/:id" element={<IssueDetailsPage />} />
-          <Route path="/dashboard/official" element={<OfficialDashboard />} />
-          <Route path="/settings" element={<SettingsPage />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/feed" element={<TimelinePage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/profile/official/:id" element={<OfficialProfilePage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/explore" element={<ExplorePage />} />
+            <Route path="/messages" element={<MessagesPage />} />
+            <Route path="/post/:id" element={<PostDetailsPage />} />
+            <Route path="/issue/:id" element={<IssueDetailsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+          </Route>
+          <Route element={<ProtectedRoute requireOfficial />}>
+            <Route path="/dashboard/official" element={<OfficialDashboard />} />
+          </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>

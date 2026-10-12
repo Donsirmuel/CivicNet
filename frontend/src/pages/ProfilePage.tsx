@@ -187,7 +187,7 @@ export default function ProfilePage() {
       <StandardLayout showRightSidebar={false}>
         <div className="flex min-h-[60vh] flex-col items-center justify-center py-16">
           <Icon name="error" className="mb-4 text-6xl text-[var(--civic-danger)]" />
-          <h2 className="text-xl font-black tracking-[-0.03em] text-[var(--civic-text)]">Error Loading Profile</h2>
+          <h2 className="text-xl font-bold tracking-[-0.01em] text-[var(--civic-text)]">Error Loading Profile</h2>
           <p className="mt-2 text-[var(--civic-muted)]">{error || 'Profile not found'}</p>
         </div>
       </StandardLayout>
@@ -210,7 +210,7 @@ export default function ProfilePage() {
             <div className="flex items-center justify-between border-b px-6 py-5" style={{ borderColor: 'var(--civic-border)' }}>
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-[var(--civic-muted)]">Profile settings</p>
-                <h2 className="mt-1 text-xl font-black tracking-[-0.03em] text-[var(--civic-text)]">Edit profile</h2>
+                <h2 className="mt-1 text-xl font-bold tracking-[-0.01em] text-[var(--civic-text)]">Edit profile</h2>
               </div>
               <button onClick={() => setIsEditModalOpen(false)} className="p-1 text-[var(--civic-muted)] hover:text-[var(--civic-text)]">
                 <Icon name="close" className="text-xl" />
@@ -323,7 +323,7 @@ export default function ProfilePage() {
                         Citizen profile
                       </p>
                       <div className="mt-2 flex flex-wrap items-center gap-3">
-                        <h1 className="break-words text-4xl font-black tracking-[-0.05em] text-[var(--civic-text)] lg:text-5xl">
+                        <h1 className="break-words font-display text-4xl tracking-[-0.02em] text-[var(--civic-text)] lg:text-5xl">
                           {profileName}
                         </h1>
                         <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(10,106,59,0.12)] px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-primary)]">
@@ -365,7 +365,7 @@ export default function ProfilePage() {
                         </p>
                         <Icon name={icon as string} className="text-[18px] text-[var(--civic-primary)]" />
                       </div>
-                      <p className="mt-3 text-[1rem] font-black tracking-[-0.03em] text-[var(--civic-text)]">
+                      <p className="mt-3 text-[1rem] font-bold tracking-[-0.01em] text-[var(--civic-text)]">
                         {value as ReactNode}
                       </p>
                     </div>

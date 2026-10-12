@@ -387,7 +387,7 @@ export default function PostDetailsPage() {
 
                     <div className="space-y-3">
                       {post.title && (
-                        <h1 className="text-[1.8rem] font-black leading-tight tracking-[-0.04em] text-[var(--civic-text-strong)] sm:text-[2.2rem]">
+                        <h1 className="font-display text-[1.8rem] leading-snug tracking-[-0.02em] text-[var(--civic-text-strong)] sm:text-[2.2rem]">
                           {post.title}
                         </h1>
                       )}
@@ -405,19 +405,19 @@ export default function PostDetailsPage() {
 
                     <div className="grid grid-cols-3 gap-3 border-t pt-5" style={{ borderColor: 'var(--civic-border)' }}>
                       <div className="rounded-md px-3 py-4 sm:px-4" style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-ghost-border)' }}>
-                        <p className="text-xl font-black tracking-[-0.03em] text-[var(--civic-text)] sm:text-2xl">{post.stats.likes}</p>
+                        <p className="font-display text-xl tracking-[-0.01em] text-[var(--civic-text)] sm:text-2xl">{post.stats.likes}</p>
                         <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--civic-muted)]">
                           Likes
                         </p>
                       </div>
                       <div className="rounded-md px-3 py-4 sm:px-4" style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-ghost-border)' }}>
-                        <p className="text-xl font-black tracking-[-0.03em] text-[var(--civic-text)] sm:text-2xl">{totalComments}</p>
+                        <p className="font-display text-xl tracking-[-0.01em] text-[var(--civic-text)] sm:text-2xl">{totalComments}</p>
                         <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--civic-muted)]">
                           Comments
                         </p>
                       </div>
                       <div className="rounded-md px-3 py-4 sm:px-4" style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-ghost-border)' }}>
-                        <p className="text-xl font-black tracking-[-0.03em] text-[var(--civic-text)] sm:text-2xl">{post.stats.shares}</p>
+                        <p className="font-display text-xl tracking-[-0.01em] text-[var(--civic-text)] sm:text-2xl">{post.stats.shares}</p>
                         <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--civic-muted)]">
                           Shares
                         </p>
@@ -536,11 +536,11 @@ export default function PostDetailsPage() {
                 <div className="mt-4 grid gap-3">
                   <div className="rounded-md px-4 py-4" style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-ghost-border)' }}>
                     <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Likes</p>
-                    <p className="mt-2 text-2xl font-black tracking-[-0.04em] text-[var(--civic-text)]">{post.stats.likes}</p>
+                    <p className="mt-2 font-display text-2xl tracking-[-0.02em] text-[var(--civic-text)]">{post.stats.likes}</p>
                   </div>
                   <div className="rounded-md px-4 py-4" style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-ghost-border)' }}>
                     <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Replies</p>
-                    <p className="mt-2 text-2xl font-black tracking-[-0.04em] text-[var(--civic-text)]">{totalComments}</p>
+                    <p className="mt-2 font-display text-2xl tracking-[-0.02em] text-[var(--civic-text)]">{totalComments}</p>
                   </div>
                 </div>
               </section>

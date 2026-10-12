@@ -203,7 +203,7 @@ export default function MessagesPage() {
         style={mobile ? undefined : { borderColor: 'var(--civic-border)' }}
       >
         <p className="civic-label">Messages</p>
-        <h1 className="mt-3 text-[1.9rem] font-black tracking-[-0.04em] text-[var(--civic-text)]">Messages</h1>
+        <h1 className="mt-3 font-display text-[1.9rem] tracking-[-0.02em] text-[var(--civic-text)]">Messages</h1>
         <div className="relative mt-4">
           <Icon
             name="search"
@@ -322,7 +322,7 @@ export default function MessagesPage() {
 
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="truncate text-lg font-black tracking-[-0.03em] text-[var(--civic-text)]">
+                  <h2 className="truncate text-lg font-bold tracking-[-0.01em] text-[var(--civic-text)]">
                     {selectedConv.user.name}
                   </h2>
                   {selectedConv.user.verified && (

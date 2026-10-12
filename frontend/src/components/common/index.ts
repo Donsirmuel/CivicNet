@@ -7,3 +7,4 @@ export { default as Sidebar } from './Sidebar';
 export { default as RightSidebar } from './RightSidebar';
 export { default as MobileNav } from './MobileNav';
 export { default as MobileHeader } from './MobileHeader';
+export { default as ProtectedRoute } from './ProtectedRoute';

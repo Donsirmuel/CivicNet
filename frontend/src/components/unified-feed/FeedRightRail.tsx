@@ -36,7 +36,7 @@ export default function FeedRightRail({ posts }: FeedRightRailProps) {
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--civic-muted)]">What is moving</p>
-            <p className="mt-1 text-lg font-black tracking-[-0.03em] text-[var(--civic-text)]">Trending Topics</p>
+            <p className="mt-1 font-display text-lg tracking-[-0.01em] text-[var(--civic-text)]">Trending Topics</p>
           </div>
           <Icon name="local_fire_department" className="text-[18px] text-[var(--civic-primary)]" />
         </div>
@@ -64,7 +64,7 @@ export default function FeedRightRail({ posts }: FeedRightRailProps) {
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--civic-muted)]">Official replies</p>
-            <p className="mt-1 text-lg font-black tracking-[-0.03em] text-[var(--civic-text)]">Directives</p>
+            <p className="mt-1 font-display text-lg tracking-[-0.01em] text-[var(--civic-text)]">Directives</p>
           </div>
           <Icon name="campaign" className="text-[18px] text-[var(--civic-gold)]" />
         </div>
@@ -98,7 +98,7 @@ export default function FeedRightRail({ posts }: FeedRightRailProps) {
 
       <section className="rounded-[28px] border border-[var(--civic-border)] bg-[linear-gradient(180deg,var(--civic-surface)_0%,var(--civic-surface-soft)_100%)] p-5" style={{ boxShadow: '0 20px 40px -34px rgba(22, 33, 51, 0.24)' }}>
         <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--civic-muted)]">Trusted offices</p>
-        <p className="mt-1 text-lg font-black tracking-[-0.03em] text-[var(--civic-text)]">Trustworthy Officials</p>
+        <p className="mt-1 font-display text-lg tracking-[-0.01em] text-[var(--civic-text)]">Trustworthy Officials</p>
         <div className="mt-4 space-y-3">
           {trustedOfficials.length ? (
             trustedOfficials.map((official) => (
