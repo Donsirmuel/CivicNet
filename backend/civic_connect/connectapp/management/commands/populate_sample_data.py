@@ -11,7 +11,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # Create sample users
         users_data = [
-            {'username': 'john_citizen', 'email': 'john@example.com', 'first_name': 'John', 'last_name': 'Doe'},
+            {'username': 'chinedu_citizen', 'email': 'chinedu@example.com', 'first_name': 'Chinedu', 'last_name': 'Okafor'},
             {'username': 'jane_official', 'email': 'jane@government.ng', 'first_name': 'Jane', 'last_name': 'Smith'},
             {'username': 'ahmed_resident', 'email': 'ahmed@example.com', 'first_name': 'Ahmed', 'last_name': 'Hassan'},
         ]

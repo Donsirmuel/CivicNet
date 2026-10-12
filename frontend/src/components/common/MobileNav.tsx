@@ -45,10 +45,10 @@ export default function MobileNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 border-t lg:hidden"
-      style={{ borderColor: 'var(--civic-border)', background: 'var(--civic-surface-muted)' }}
+      className="fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-xl lg:hidden"
+      style={{ borderColor: 'var(--civic-border)', background: 'rgba(17, 13, 11, 0.88)' }}
     >
-      <div className="relative grid h-[74px] grid-cols-5 items-center px-2">
+      <div className="relative grid h-[76px] grid-cols-5 items-center px-2">
         {edgeItems.slice(0, 2).map((item) => (
           <Link
             key={`${item.path}-${item.label}`}
@@ -64,7 +64,7 @@ export default function MobileNav() {
 
         <Link
           to="/feed"
-          className="relative mx-auto -mt-8 flex size-14 items-center justify-center rounded-full text-[var(--civic-primary-contrast)] shadow-[0_22px_40px_rgba(10,106,59,0.24)]"
+          className="relative mx-auto -mt-8 flex size-14 items-center justify-center rounded-[18px] text-[var(--civic-primary-contrast)] shadow-[0_22px_40px_rgba(10,106,59,0.24)]"
           style={{ background: 'linear-gradient(135deg, var(--civic-primary) 0%, var(--civic-primary-deep) 100%)' }}
           aria-label="Create new post"
         >

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Icon, Input } from '../components/common';
 import PostCard, { type Post } from '../components/issues/PostCard';
@@ -204,9 +204,14 @@ export default function ProfilePage() {
     <StandardLayout showRightSidebar={false}>
       {isEditModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(22,33,51,0.28)] px-4 backdrop-blur-sm">
-          <div className="max-h-[92vh] w-full max-w-lg overflow-hidden civic-panel">
+          <div
+            className="max-h-[92vh] w-full max-w-lg overflow-hidden rounded-[28px] border border-[var(--civic-border)] bg-[var(--civic-surface)] shadow-[0_30px_80px_-30px_rgba(0,0,0,0.45)]"
+          >
             <div className="flex items-center justify-between border-b px-6 py-5" style={{ borderColor: 'var(--civic-border)' }}>
-              <h2 className="text-xl font-black tracking-[-0.03em] text-[var(--civic-text)]">Edit profile</h2>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-[var(--civic-muted)]">Profile settings</p>
+                <h2 className="mt-1 text-xl font-black tracking-[-0.03em] text-[var(--civic-text)]">Edit profile</h2>
+              </div>
               <button onClick={() => setIsEditModalOpen(false)} className="p-1 text-[var(--civic-muted)] hover:text-[var(--civic-text)]">
                 <Icon name="close" className="text-xl" />
               </button>
@@ -222,7 +227,7 @@ export default function ProfilePage() {
                     'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop'
                   }
                   alt="Avatar preview"
-                  className="size-20 rounded-md object-cover"
+                  className="size-20 rounded-2xl object-cover"
                 />
                 <div>
                   <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarSelect} className="hidden" />
@@ -243,16 +248,16 @@ export default function ProfilePage() {
                 onChange={(event) => setEditFormData({ ...editFormData, lastName: event.target.value })}
               />
               <div>
-                  <label className="mb-3 block text-[11px] font-bold uppercase tracking-[0.18em] text-[#36506b]">
-                    Bio
-                  </label>
+                <label className="mb-3 block text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--civic-muted)]">
+                  Bio
+                </label>
                 <textarea
                   value={editFormData.bio}
                   onChange={(event) =>
                     setEditFormData({ ...editFormData, bio: event.target.value.slice(0, 160) })
                   }
                   rows={4}
-                  className="w-full resize-none rounded-md p-4 text-[15px] text-[var(--civic-text)] outline-none"
+                  className="w-full resize-none rounded-[20px] p-4 text-[15px] text-[var(--civic-text)] outline-none"
                   style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-ghost-border)' }}
                 />
               </div>
@@ -281,145 +286,191 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, var(--civic-bg) 0%, var(--civic-bg-deep) 100%)' }}>
-        <div className="relative h-56 overflow-hidden" style={{ background: 'linear-gradient(135deg, var(--civic-surface-muted) 0%, var(--civic-surface-inset) 100%)' }}>
-          <img
-            src={
-              user.banner ||
-              user.cover_image ||
-              'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1400&h=500&fit=crop'
-            }
-            alt="Citizen banner"
-            className="h-full w-full object-cover opacity-55"
-          />
-        </div>
-
-        <div className="px-4 pb-10 lg:px-8">
-          <div className="relative -mt-20 civic-panel p-6">
-            <div className="absolute right-6 top-6 z-10">
-              <Button variant="outline" size="sm" icon="edit" onClick={() => setIsEditModalOpen(true)}>
-                Edit Profile
-              </Button>
-            </div>
-
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-              <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+      <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, var(--civic-surface-soft) 0%, var(--civic-bg) 100%)' }}>
+        <div className="mx-auto max-w-[1400px] px-4 py-6 lg:px-8 lg:py-8">
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <section className="overflow-hidden rounded-[32px] border border-[var(--civic-border)] bg-[var(--civic-surface)] shadow-[0_30px_70px_-36px_rgba(0,0,0,0.35)]">
+              <div className="relative h-48 overflow-hidden border-b border-[var(--civic-border)] lg:h-56">
                 <img
                   src={
-                    avatarPreview ||
-                    user.avatar ||
-                    user.profile_picture ||
-                    'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop'
+                    user.banner ||
+                    user.cover_image ||
+                    'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1400&h=500&fit=crop'
                   }
-                  alt={profileName}
-                    className="size-32 rounded-md object-cover"
-                    style={{ boxShadow: '0 18px 36px rgba(22,33,51,0.16), 0 0 0 4px var(--civic-surface)' }}
-                  />
-
-                <div>
-                  <h1 className="text-4xl font-black tracking-[-0.04em] text-[var(--civic-text)] lg:text-5xl">
-                    {profileName}
-                  </h1>
-                  <p className="mt-2 text-lg font-bold text-[var(--civic-primary)]">@{user.username || 'citizen'}</p>
-                  <p className="mt-4 max-w-2xl text-[15px] leading-7 text-[var(--civic-muted)]">
-                    {user.bio ||
-                      'Your profile shows the updates and reports you have shared with your community.'}
-                  </p>
-                </div>
+                  alt="Citizen banner"
+                  className="h-full w-full object-cover opacity-60"
+                />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(19,32,51,0.1)_0%,rgba(19,32,51,0.34)_100%)]" />
+                <div className="absolute inset-0 bg-pattern opacity-20" />
               </div>
-            </div>
 
-            <div className="mt-5 border-t border-[var(--civic-border)] pt-3">
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--civic-muted)]">
-                  <Icon name="feed" className="text-sm text-[var(--civic-primary)]" />
-                  Posts <strong className="ml-1 text-sm font-black text-[var(--civic-text)]">{posts.length}</strong>
-                </span>
+              <div className="flex flex-col gap-7 p-5 lg:p-7">
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+                    <img
+                      src={
+                        avatarPreview ||
+                        user.avatar ||
+                        user.profile_picture ||
+                        'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop'
+                      }
+                      alt={profileName}
+                      className="size-32 rounded-[28px] object-cover ring-4 ring-[var(--civic-surface)]"
+                    />
 
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--civic-muted)]">
-                  <Icon name="flag" className="text-sm text-[var(--civic-primary)]" />
-                  Issues <strong className="ml-1 text-sm font-black text-[var(--civic-text)]">{posts.filter((post) => post.type === 'issue').length}</strong>
-                </span>
-
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--civic-muted)]">
-                  <Icon name="chat_bubble" className="text-sm text-[var(--civic-gold)]" />
-                  Replies <strong className="ml-1 text-sm font-black text-[var(--civic-text)]">{posts.reduce((sum, post) => sum + post.stats.comments, 0)}</strong>
-                </span>
-
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--civic-muted)]">
-                  <Icon name="alternate_email" className="text-sm text-[var(--civic-primary)]" />
-                  Username <strong className="ml-1 text-sm font-black text-[var(--civic-text)]">@{user.username || 'citizen'}</strong>
-                </span>
-
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--civic-muted)]">
-                  <Icon name="location_on" className="text-sm text-[var(--civic-primary)]" />
-                  Location <strong className="ml-1 text-sm font-black text-[var(--civic-text)]">{user.location || 'Nigeria'}</strong>
-                </span>
-
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--civic-muted)]">
-                  <Icon name="calendar_month" className="text-sm text-[var(--civic-primary)]" />
-                  Joined <strong className="ml-1 text-sm font-black text-[var(--civic-text)]">{user?.date_joined ? new Date(user.date_joined).toLocaleDateString() : 'Recently joined'}</strong>
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-8 civic-panel">
-            <div className="flex gap-8 overflow-x-auto px-6">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`relative px-1 py-4 text-sm font-bold transition ${
-                    activeTab === tab.id ? 'text-[var(--civic-text)]' : 'text-[var(--civic-muted)] hover:text-[var(--civic-text)]'
-                  }`}
-                >
-                  {tab.label}
-                  {activeTab === tab.id && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--civic-primary)]" />}
-                </button>
-              ))}
-            </div>
-
-            <div className="p-6">
-              {activeTab === 'posts' && (
-                <div className="space-y-4">
-                  {posts.length ? (
-                    posts.map((post) => (
-                      <PostCard
-                        key={`${post.type}-${post.id}`}
-                        post={post}
-                        onLike={handleLike}
-                        onComment={handleComment}
-                        onShare={handleShare}
-                        onBookmark={handleBookmark}
-                      />
-                    ))
-                  ) : (
-                    <div className="rounded-md p-10 text-center" style={{ background: 'var(--civic-surface-soft)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}>
-                      <Icon name="feed" className="mx-auto mb-4 text-5xl text-[var(--civic-muted)]" />
-                      <p className="text-lg font-bold text-[var(--civic-text)]">No posts yet</p>
-                      <p className="mt-2 text-sm text-[var(--civic-muted)]">
-                        When you post updates or reports, they will show up here.
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--civic-muted)]">
+                        Citizen profile
+                      </p>
+                      <div className="mt-2 flex flex-wrap items-center gap-3">
+                        <h1 className="break-words text-4xl font-black tracking-[-0.05em] text-[var(--civic-text)] lg:text-5xl">
+                          {profileName}
+                        </h1>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(10,106,59,0.12)] px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-primary)]">
+                          <Icon name="person" className="text-base" />
+                          Citizen
+                        </span>
+                      </div>
+                      <p className="mt-2 text-lg font-bold text-[var(--civic-primary)]">
+                        @{user.username || 'citizen'}
+                      </p>
+                      <p className="mt-4 max-w-2xl text-[15px] leading-7 text-[var(--civic-muted)]">
+                        {user.bio ||
+                          'Your profile shows the updates and reports you have shared with your community.'}
                       </p>
                     </div>
-                  )}
-                </div>
-              )}
+                  </div>
 
-              {activeTab === 'replies' && (
-                <div className="rounded-md p-10 text-center" style={{ background: 'var(--civic-surface-soft)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}>
-                  <Icon name="chat_bubble" className="mx-auto mb-4 text-5xl text-[var(--civic-muted)]" />
-                  <p className="text-lg font-bold text-[var(--civic-text)]">No replies yet</p>
+                  <div className="flex gap-3">
+                    <Button variant="outline" size="sm" icon="edit" onClick={() => setIsEditModalOpen(true)}>
+                      Edit Profile
+                    </Button>
+                  </div>
                 </div>
-              )}
 
-              {activeTab === 'media' && (
-                <div className="rounded-md p-10 text-center" style={{ background: 'var(--civic-surface-soft)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}>
-                  <Icon name="photo_library" className="mx-auto mb-4 text-5xl text-[var(--civic-muted)]" />
-                  <p className="text-lg font-bold text-[var(--civic-text)]">No media yet</p>
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  {[
+                    ['Posts', posts.length, 'feed'],
+                    ['Issues', posts.filter((post) => post.type === 'issue').length, 'flag'],
+                    ['Replies', posts.reduce((sum, post) => sum + post.stats.comments, 0), 'chat_bubble'],
+                    ['Joined', user?.date_joined ? new Date(user.date_joined).toLocaleDateString() : 'Recently joined', 'calendar_month'],
+                  ].map(([label, value, icon]) => (
+                    <div
+                      key={label as string}
+                      className="rounded-[20px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] px-5 py-5"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--civic-muted)]">
+                          {label}
+                        </p>
+                        <Icon name={icon as string} className="text-[18px] text-[var(--civic-primary)]" />
+                      </div>
+                      <p className="mt-3 text-[1rem] font-black tracking-[-0.03em] text-[var(--civic-text)]">
+                        {value as ReactNode}
+                      </p>
+                    </div>
+                  ))}
                 </div>
-              )}
-            </div>
+              </div>
+
+              <div className="border-t border-[var(--civic-border)] px-6 lg:px-8">
+                <div className="flex gap-8 overflow-x-auto">
+                  {tabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`relative px-1 py-4 text-sm font-bold transition ${
+                        activeTab === tab.id
+                          ? 'text-[var(--civic-text)]'
+                          : 'text-[var(--civic-muted)] hover:text-[var(--civic-text)]'
+                      }`}
+                    >
+                      {tab.label}
+                      {activeTab === tab.id && (
+                        <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--civic-primary)]" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t border-[var(--civic-border)] p-5 lg:p-8">
+                {activeTab === 'posts' && (
+                  <div className="space-y-4">
+                    {posts.length ? (
+                      posts.map((post) => (
+                        <PostCard
+                          key={`${post.type}-${post.id}`}
+                          post={post}
+                          onLike={handleLike}
+                          onComment={handleComment}
+                          onShare={handleShare}
+                          onBookmark={handleBookmark}
+                        />
+                      ))
+                    ) : (
+                      <div className="rounded-[24px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] p-10 text-center">
+                        <Icon name="feed" className="mx-auto mb-4 text-5xl text-[var(--civic-muted)]" />
+                        <p className="text-lg font-bold text-[var(--civic-text)]">No posts yet</p>
+                        <p className="mt-2 text-sm text-[var(--civic-muted)]">
+                          When you post updates or reports, they will show up here.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === 'replies' && (
+                  <div className="rounded-[24px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] p-10 text-center">
+                    <Icon name="chat_bubble" className="mx-auto mb-4 text-5xl text-[var(--civic-muted)]" />
+                    <p className="text-lg font-bold text-[var(--civic-text)]">No replies yet</p>
+                    <p className="mt-2 text-sm text-[var(--civic-muted)]">
+                      Replies and follow-ups will show here when they are posted.
+                    </p>
+                  </div>
+                )}
+
+                {activeTab === 'media' && (
+                  <div className="rounded-[24px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] p-10 text-center">
+                    <Icon name="photo_library" className="mx-auto mb-4 text-5xl text-[var(--civic-muted)]" />
+                    <p className="text-lg font-bold text-[var(--civic-text)]">No media yet</p>
+                    <p className="mt-2 text-sm text-[var(--civic-muted)]">
+                      Photos and videos you share will appear here.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            <aside className="space-y-4 xl:sticky xl:top-[96px] xl:self-start">
+              <section className="rounded-[28px] border border-[var(--civic-border)] bg-[var(--civic-surface)] p-5 shadow-[0_24px_48px_-36px_rgba(22,33,51,0.28)]">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--civic-muted)]">Profile at a glance</p>
+                <div className="mt-4 space-y-3">
+                  <div className="rounded-[20px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] p-4">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Username</p>
+                    <p className="mt-2 text-sm font-bold text-[var(--civic-text)]">@{user.username || 'citizen'}</p>
+                  </div>
+                  <div className="rounded-[20px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] p-4">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Location</p>
+                    <p className="mt-2 text-sm font-bold text-[var(--civic-text)]">{user.location || 'Nigeria'}</p>
+                  </div>
+                  <div className="rounded-[20px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] p-4">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Member since</p>
+                    <p className="mt-2 text-sm font-bold text-[var(--civic-text)]">
+                      {user?.date_joined ? new Date(user.date_joined).toLocaleDateString() : 'Recently joined'}
+                    </p>
+                  </div>
+                </div>
+              </section>
+
+              <section className="rounded-[28px] border border-[var(--civic-border)] bg-[var(--civic-surface)] p-5 shadow-[0_24px_48px_-36px_rgba(22,33,51,0.28)]">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--civic-muted)]">About</p>
+                <p className="mt-3 text-sm leading-7 text-[var(--civic-muted)]">
+                  {user.bio ||
+                    'Your profile shows the updates and reports you have shared with your community.'}
+                </p>
+              </section>
+            </aside>
           </div>
         </div>
       </div>

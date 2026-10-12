@@ -76,17 +76,28 @@ export default function PostComposer({ onPostSubmit, onIssueSubmit }: PostCompos
 
   return (
     <section
-      className="rounded-md px-4 py-4 sm:px-5"
-      style={{ background: 'var(--civic-surface)', boxShadow: 'var(--civic-shadow-soft)' }}
+      className="overflow-hidden rounded-[24px] border border-[var(--civic-border)] px-4 py-4 sm:px-5"
+      style={{ background: 'var(--civic-surface)', boxShadow: '0 24px 48px -36px rgba(22, 33, 51, 0.28)' }}
     >
       <div className="flex gap-4">
         <img
-          className="mt-1 size-11 shrink-0 rounded-md object-cover"
+          className="mt-1 size-11 shrink-0 rounded-xl object-cover"
           src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop"
           alt="Your avatar"
         />
 
         <div className="min-w-0 flex-1">
+          <div className="flex items-baseline justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--civic-muted)]">
+                Share something
+              </p>
+              <p className="mt-2 font-display text-2xl tracking-[-0.03em] text-[var(--civic-text)]">
+                Put an update on the record.
+              </p>
+            </div>
+          </div>
+
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -115,14 +126,14 @@ export default function PostComposer({ onPostSubmit, onIssueSubmit }: PostCompos
           <textarea
             value={content}
             onChange={(event) => setContent(event.target.value)}
-            className="mt-4 min-h-[108px] w-full resize-none bg-transparent text-[15px] leading-7 text-[var(--civic-text)] placeholder:text-[var(--civic-muted)] outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus:[box-shadow:inset_0_0_0_1px_var(--civic-primary)]"
+            className="mt-4 min-h-[130px] w-full resize-none rounded-[20px] bg-transparent px-4 py-4 text-[15px] leading-7 text-[var(--civic-text)] placeholder:text-[var(--civic-muted)] outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none"
             style={{ boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}
             placeholder="Report an issue or share an update..."
           />
 
           {selectedImage && (
             <div
-              className="relative mt-4 overflow-hidden rounded-md"
+              className="relative mt-4 overflow-hidden rounded-[20px]"
               style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-ghost-border)' }}
             >
               <img src={selectedImage} alt="Selected upload" className="max-h-72 w-full object-cover" />
@@ -191,12 +202,12 @@ export default function PostComposer({ onPostSubmit, onIssueSubmit }: PostCompos
                 <select
                   value={scope}
                   onChange={(event) => setScope(event.target.value as PostScope)}
-                  className="w-full appearance-none rounded-[20px] border px-11 py-2.5 pr-10 text-[11px] font-semibold uppercase tracking-[0.14em] outline-none transition hover:border-[var(--civic-border-strong)]"
+                  className="w-full appearance-none rounded-full border px-11 py-2.5 pr-10 text-[11px] font-semibold uppercase tracking-[0.14em] outline-none transition hover:border-[var(--civic-border-strong)]"
                   style={{
                     background: 'var(--civic-surface)',
                     borderColor: 'var(--civic-border)',
                     color: 'var(--civic-text)',
-                    boxShadow: '0 6px 18px rgba(22,33,51,0.04)',
+                    boxShadow: '0 10px 24px -18px rgba(22,33,51,0.45)',
                   }}
                 >
                   <option value="local">Local</option>

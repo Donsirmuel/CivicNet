@@ -30,7 +30,7 @@ export default function MessagesLeftSidebar({
     },
     {
       id: '3',
-      name: 'John Smith',
+      name: 'Babatunde Adebayo',
       avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
       lastMessage: 'Sounds good to me',
       timestamp: '5h ago',

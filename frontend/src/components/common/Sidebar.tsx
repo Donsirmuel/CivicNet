@@ -135,17 +135,17 @@ export default function Sidebar() {
               key={item.path}
               to={item.path}
               title={isCollapsed ? item.label : undefined}
-              className={`relative flex items-center gap-3 px-3 py-3 transition ${
+              className={`relative flex items-center gap-3 rounded-[18px] px-3 py-3 transition ${
                 isCollapsed ? 'justify-center' : ''
               } ${
                 isActive(item.path)
-                  ? 'text-[var(--civic-primary)]'
+                  ? 'text-[var(--civic-text)]'
                   : 'text-[var(--civic-muted)] hover:text-[var(--civic-text)]'
               }`}
               style={isActive(item.path) ? { background: 'var(--civic-surface-strong)' } : undefined}
             >
               {!isCollapsed && isActive(item.path) && (
-                <span className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-[var(--civic-primary)]" />
+                <span className="absolute left-1 top-2 bottom-2 w-1 rounded-full bg-[var(--civic-primary)]" />
               )}
               <Icon name={item.icon} filled={isActive(item.path)} className="text-[1.1rem]" />
               {!isCollapsed && <span className="text-sm font-bold">{item.label}</span>}
@@ -159,11 +159,11 @@ export default function Sidebar() {
         {!isCollapsed ? (
           <button
             onClick={handlePrimaryAction}
-            className="grid min-h-14 w-full grid-cols-[24px_1fr_24px] items-center rounded-full px-6 text-[11px] font-semibold uppercase tracking-[0.18em] transition hover:brightness-105"
+            className="grid min-h-14 w-full grid-cols-[24px_1fr_24px] items-center rounded-[18px] px-6 text-[11px] font-semibold uppercase tracking-[0.18em] transition hover:brightness-105"
             style={{
               background: 'linear-gradient(135deg, var(--civic-primary) 0%, var(--civic-primary-deep) 100%)',
               color: 'var(--civic-primary-contrast)',
-              boxShadow: '0 18px 38px rgba(10,106,59,0.16)',
+              boxShadow: '0 18px 38px rgba(10,106,59,0.12)',
             }}
           >
             <Icon name="add" className="text-lg" />
@@ -173,7 +173,7 @@ export default function Sidebar() {
         ) : (
           <button
             onClick={handlePrimaryAction}
-            className="mx-auto flex size-12 items-center justify-center rounded-full text-[var(--civic-primary-contrast)] shadow-[0_18px_38px_rgba(10,106,59,0.16)] transition hover:brightness-110"
+            className="mx-auto flex size-12 items-center justify-center rounded-[18px] text-[var(--civic-primary-contrast)] shadow-[0_18px_38px_rgba(10,106,59,0.12)] transition hover:brightness-110"
             style={{ background: 'linear-gradient(135deg, var(--civic-primary) 0%, var(--civic-primary-deep) 100%)' }}
             title="Create"
           >
@@ -203,8 +203,8 @@ export default function Sidebar() {
         {!isCollapsed ? (
           <button
             onClick={() => setIsMenuOpen((current) => !current)}
-            className="flex w-full items-center gap-3 rounded-md px-3 py-3 text-left transition"
-            style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-ghost-border)' }}
+            className="flex w-full items-center gap-3 rounded-[18px] px-3 py-3 text-left transition"
+            style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}
           >
             <img
               className="size-11 rounded-md object-cover"
@@ -241,8 +241,8 @@ export default function Sidebar() {
 
         {isMenuOpen && (
           <div
-            className="absolute bottom-full mb-2 w-56 rounded-md py-2 shadow-[0_20px_40px_rgba(22,33,51,0.12)]"
-            style={{ background: 'var(--civic-surface-strong)', boxShadow: '0 20px 40px rgba(22,33,51,0.12), inset 0 0 0 1px var(--civic-ghost-border)' }}
+            className="absolute bottom-full mb-2 w-56 rounded-[18px] py-2 shadow-[0_20px_40px_rgba(22,33,51,0.12)]"
+            style={{ background: 'var(--civic-surface-strong)', boxShadow: '0 20px 40px rgba(22,33,51,0.12), inset 0 0 0 1px var(--civic-border)' }}
           >
             <button
               onClick={() => {

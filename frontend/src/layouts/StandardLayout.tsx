@@ -117,7 +117,7 @@ export default function StandardLayout({
 
   return (
     <div
-      className="min-h-screen font-display"
+      className="min-h-screen"
       style={{ background: 'linear-gradient(180deg, var(--civic-bg) 0%, var(--civic-bg-deep) 100%)' }}
     >
       {/* Mobile Header - only visible on mobile */}

@@ -11,7 +11,7 @@ const accessHighlights = [
 ];
 
 const registerHeroImage =
-  'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=1600&h=900&fit=crop';
+  '/Register-hero.jfif';
 
 export default function RegisterPage() {
   const navigate = useNavigate();

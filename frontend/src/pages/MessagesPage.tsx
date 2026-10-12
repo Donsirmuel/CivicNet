@@ -49,7 +49,7 @@ const initialConversations: Conversation[] = [
   {
     id: '2',
     user: {
-      name: 'Hon. Julia Smith',
+      name: 'Hon. Adelabu Kayode',
       username: '@jsmith_state',
       avatar:
         'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
@@ -197,13 +197,13 @@ export default function MessagesPage() {
   };
 
   const renderConversationList = (mobile = false) => (
-    <div className={`flex h-full flex-col ${mobile ? 'space-y-4' : ''}`}>
+      <div className={`flex h-full flex-col ${mobile ? 'space-y-4' : ''}`}>
       <div
         className={mobile ? 'civic-section' : 'border-b px-5 py-5'}
         style={mobile ? undefined : { borderColor: 'var(--civic-border)' }}
       >
         <p className="civic-label">Messages</p>
-        <h1 className="mt-3 text-2xl font-black tracking-[-0.03em] text-[var(--civic-text)]">Messages</h1>
+        <h1 className="mt-3 text-[1.9rem] font-black tracking-[-0.04em] text-[var(--civic-text)]">Messages</h1>
         <div className="relative mt-4">
           <Icon
             name="search"
@@ -300,7 +300,7 @@ export default function MessagesPage() {
       <div className="flex min-h-full flex-col">
         <div
           className={`${mobile ? 'sticky top-0 z-10' : 'sticky top-0 z-20'} border-b px-4 py-4 lg:px-8`}
-          style={{ borderColor: 'var(--civic-border)', background: 'var(--civic-surface)' }}
+          style={{ borderColor: 'var(--civic-border)', background: 'var(--civic-surface-soft)' }}
         >
           <div className="flex items-center justify-between gap-4">
             <div className="flex min-w-0 items-center gap-3">
@@ -317,7 +317,7 @@ export default function MessagesPage() {
               <img
                 src={selectedConv.user.avatar}
                 alt={selectedConv.user.name}
-                className="size-12 rounded-md object-cover"
+                className="size-12 rounded-[14px] object-cover"
               />
 
               <div className="min-w-0">
@@ -351,14 +351,14 @@ export default function MessagesPage() {
           className="flex-1 px-4 py-6 lg:px-8"
           style={{ background: 'linear-gradient(180deg, var(--civic-bg) 0%, var(--civic-surface-soft) 100%)' }}
         >
-          <div className="mx-auto max-w-4xl space-y-4">
+          <div className="w-full space-y-5">
             {currentMessages.map((message) => (
               <div
                 key={message.id}
                 className={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className="max-w-[720px] rounded-[20px] px-5 py-4"
+                  className="w-full max-w-[840px] rounded-[20px] px-5 py-4"
                   style={{
                     background:
                       message.sender === 'me'
@@ -385,7 +385,7 @@ export default function MessagesPage() {
         </div>
 
         <div className="border-t px-4 py-4 lg:px-8" style={{ borderColor: 'var(--civic-border)', background: 'var(--civic-surface)' }}>
-          <div className="mx-auto flex max-w-4xl items-end gap-3">
+          <div className="flex w-full items-end gap-3">
             <button className="hidden civic-icon-button size-10 sm:flex" aria-label="Add image">
               <Icon name="image" className="text-xl" />
             </button>
@@ -397,7 +397,7 @@ export default function MessagesPage() {
               onChange={(event) => setMessageText(event.target.value)}
               placeholder="Write a reply..."
               rows={1}
-              className="max-h-40 min-h-[50px] flex-1 resize-y rounded-md bg-transparent px-4 py-3 text-sm leading-6 text-[var(--civic-text)] placeholder:text-[var(--civic-muted)] outline-none"
+              className="max-h-40 min-h-[50px] flex-1 resize-y rounded-[18px] bg-transparent px-4 py-3 text-sm leading-6 text-[var(--civic-text)] placeholder:text-[var(--civic-muted)] outline-none"
               style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}
             />
             <button
@@ -415,10 +415,10 @@ export default function MessagesPage() {
         </div>
       </div>
     ) : (
-      <div
-        className="flex min-h-[60vh] items-center justify-center"
-        style={{ background: 'linear-gradient(180deg, var(--civic-bg) 0%, var(--civic-bg-deep) 100%)', color: 'var(--civic-muted)' }}
-      >
+        <div
+          className="flex min-h-[60vh] items-center justify-center"
+          style={{ background: 'linear-gradient(180deg, var(--civic-bg) 0%, var(--civic-bg-deep) 100%)', color: 'var(--civic-muted)' }}
+        >
         <div className="text-center">
           <Icon name="mail" className="mx-auto mb-4 text-6xl text-[var(--civic-muted)]" />
           <p className="text-lg font-bold text-[var(--civic-text)]">Select a message</p>
@@ -440,7 +440,7 @@ export default function MessagesPage() {
         <div className="hidden lg:grid lg:min-h-screen lg:grid-cols-[380px_minmax(0,1fr)]">
           <div
             className="sticky top-0 h-screen overflow-y-auto civic-scrollbar"
-            style={{ borderRight: '1px solid var(--civic-border)', background: 'var(--civic-surface)' }}
+            style={{ borderRight: '1px solid var(--civic-border)', background: 'var(--civic-surface-soft)' }}
           >
             {renderConversationList()}
           </div>

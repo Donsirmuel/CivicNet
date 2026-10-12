@@ -10,8 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource/material-symbols-outlined": "^5.2.41",
     "@react-oauth/google": "^0.13.4",
     "axios": "^1.8.4",
+    "framer-motion": "^14.1.0",
+    "lucide-react": "^1.55.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.13.0"

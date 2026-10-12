@@ -27,7 +27,7 @@ export default function IssueDetailsLeftSidebar({
   const recentUpdates = [
     { timestamp: '2 hours ago', description: 'Status updated to In Progress', author: 'City Council' },
     { timestamp: '1 day ago', description: 'New solution proposed', author: 'Community Member' },
-    { timestamp: '3 days ago', description: 'Issue reported', author: 'John Citizen' },
+    { timestamp: '3 days ago', description: 'Issue reported', author: 'Kelechi Okonkwo' },
   ];
 
   return (

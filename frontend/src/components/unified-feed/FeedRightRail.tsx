@@ -31,10 +31,13 @@ export default function FeedRightRail({ posts }: FeedRightRailProps) {
   ).slice(0, 3);
 
   return (
-    <div className="space-y-4">
-      <section className="civic-panel-soft p-5">
+    <div className="space-y-5">
+      <section className="rounded-[28px] border border-[var(--civic-border)] bg-[linear-gradient(180deg,var(--civic-surface)_0%,var(--civic-surface-soft)_100%)] p-5" style={{ boxShadow: '0 20px 40px -34px rgba(22, 33, 51, 0.24)' }}>
         <div className="flex items-center justify-between gap-3">
-          <p className="text-lg font-black tracking-[-0.03em] text-[var(--civic-text)]">Trending Topics</p>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--civic-muted)]">What is moving</p>
+            <p className="mt-1 text-lg font-black tracking-[-0.03em] text-[var(--civic-text)]">Trending Topics</p>
+          </div>
           <Icon name="local_fire_department" className="text-[18px] text-[var(--civic-primary)]" />
         </div>
 
@@ -42,7 +45,7 @@ export default function FeedRightRail({ posts }: FeedRightRailProps) {
           {trendingTopics.map(([topic, count]) => (
             <article
               key={topic}
-              className="rounded-md px-4 py-4"
+              className="rounded-[18px] px-4 py-4"
               style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-ghost-border)' }}
             >
               <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--civic-muted)]">
@@ -57,9 +60,12 @@ export default function FeedRightRail({ posts }: FeedRightRailProps) {
         </div>
       </section>
 
-      <section className="civic-panel-soft p-5">
+      <section className="rounded-[28px] border border-[var(--civic-border)] bg-[linear-gradient(180deg,var(--civic-surface)_0%,var(--civic-surface-soft)_100%)] p-5" style={{ boxShadow: '0 20px 40px -34px rgba(22, 33, 51, 0.24)' }}>
         <div className="flex items-center justify-between gap-3">
-          <p className="text-lg font-black tracking-[-0.03em] text-[var(--civic-text)]">Directives</p>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--civic-muted)]">Official replies</p>
+            <p className="mt-1 text-lg font-black tracking-[-0.03em] text-[var(--civic-text)]">Directives</p>
+          </div>
           <Icon name="campaign" className="text-[18px] text-[var(--civic-gold)]" />
         </div>
 
@@ -68,7 +74,7 @@ export default function FeedRightRail({ posts }: FeedRightRailProps) {
             officialPosts.map((post) => (
               <article
                 key={`${post.type}-${post.id}`}
-                className="rounded-md px-4 py-4"
+                className="rounded-[18px] px-4 py-4"
                 style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-ghost-border)' }}
               >
                 <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--civic-primary)]">
@@ -90,14 +96,15 @@ export default function FeedRightRail({ posts }: FeedRightRailProps) {
         </div>
       </section>
 
-      <section className="civic-panel-soft p-5">
-        <p className="text-lg font-black tracking-[-0.03em] text-[var(--civic-text)]">Trustworthy Officials</p>
+      <section className="rounded-[28px] border border-[var(--civic-border)] bg-[linear-gradient(180deg,var(--civic-surface)_0%,var(--civic-surface-soft)_100%)] p-5" style={{ boxShadow: '0 20px 40px -34px rgba(22, 33, 51, 0.24)' }}>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--civic-muted)]">Trusted offices</p>
+        <p className="mt-1 text-lg font-black tracking-[-0.03em] text-[var(--civic-text)]">Trustworthy Officials</p>
         <div className="mt-4 space-y-3">
           {trustedOfficials.length ? (
             trustedOfficials.map((official) => (
               <div
                 key={official.id || official.username}
-                className="flex items-center gap-3 rounded-md px-4 py-3"
+                className="flex items-center gap-3 rounded-[18px] px-4 py-3"
                 style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-ghost-border)' }}
               >
                 <img
@@ -117,7 +124,7 @@ export default function FeedRightRail({ posts }: FeedRightRailProps) {
             ))
           ) : (
             <div
-              className="rounded-md px-4 py-4 text-sm text-[var(--civic-muted)]"
+              className="rounded-[18px] px-4 py-4 text-sm text-[var(--civic-muted)]"
               style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-ghost-border)' }}
             >
               No suggested offices right now.

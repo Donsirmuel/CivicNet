@@ -8,7 +8,27 @@ export default {
   theme: {
     extend: {
       colors: {
-        "primary": "#11d442",
+        "primary": "var(--primary)",
+        "primary-foreground": "var(--primary-foreground)",
+        "background": "var(--background)",
+        "foreground": "var(--foreground)",
+        "card": "var(--card)",
+        "card-foreground": "var(--card-foreground)",
+        "popover": "var(--popover)",
+        "popover-foreground": "var(--popover-foreground)",
+        "secondary": "var(--secondary)",
+        "secondary-foreground": "var(--secondary-foreground)",
+        "muted": "var(--muted)",
+        "muted-foreground": "var(--muted-foreground)",
+        "accent": "var(--accent)",
+        "accent-foreground": "var(--accent-foreground)",
+        "border": "var(--border)",
+        "input": "var(--input)",
+        "ring": "var(--ring)",
+        "ink": "var(--ink)",
+        "cream": "var(--cream)",
+        "paper": "var(--paper)",
+        "hairline": "var(--hairline)",
         "background-light": "#f6f8f6",
         "background-dark": "#0f1419",
         "navy": {
@@ -26,7 +46,8 @@ export default {
         },
       },
       fontFamily: {
-        "display": ["Inter", "sans-serif"]
+        "display": ["DM Serif Display", "Georgia", "serif"],
+        "sans": ["Plus Jakarta Sans", "Inter", "sans-serif"]
       },
       borderRadius: {
         "DEFAULT": "0.25rem",

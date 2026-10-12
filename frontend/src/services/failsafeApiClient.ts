@@ -4,7 +4,7 @@
  * Falls back to cached/demo data if backend is down.
  */
 
-import axios, { AxiosError, AxiosInstance } from 'axios';
+import axios, { AxiosError,type AxiosInstance } from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 const CACHE_KEY = 'civicnet_api_cache';

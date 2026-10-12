@@ -41,24 +41,24 @@ export default function ViewToolbar({
 
   return (
     <header
-      className="sticky top-0 z-20 border-b"
+      className="border-b backdrop-blur-xl"
       style={{ borderColor: 'var(--civic-border)', background: 'var(--civic-glass)' }}
     >
       <div className="px-3 py-3 lg:px-8 lg:py-4">
         <form
           onSubmit={handleSubmit}
-          className="mx-auto grid max-w-[760px] grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-[210px_210px_minmax(0,1fr)]"
+          className="grid w-full grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-[220px_220px_minmax(0,1fr)]"
         >
           <div className="relative md:min-w-0">
             <select
               value={scope}
               onChange={(event) => onScopeChange(event.target.value as CivicFeedFilters['scope'])}
-              className="w-full appearance-none rounded-[20px] border px-11 py-3 pr-10 text-sm font-semibold outline-none transition hover:border-[var(--civic-border-strong)] sm:px-12 sm:py-3.5 sm:pr-11"
+              className="w-full appearance-none rounded-full border px-11 py-3 pr-10 text-sm font-semibold outline-none transition hover:border-[var(--civic-border-strong)] sm:px-12 sm:py-3.5 sm:pr-11"
               style={{
-                background: 'var(--civic-surface)',
+                background: 'var(--civic-surface-soft)',
                 borderColor: 'var(--civic-border)',
                 color: 'var(--civic-text)',
-                boxShadow: '0 6px 18px rgba(22,33,51,0.04)',
+                boxShadow: '0 10px 24px -20px rgba(22,33,51,0.28)',
               }}
             >
               {scopeOptions.map((option) => (
@@ -81,12 +81,12 @@ export default function ViewToolbar({
             <select
               value={contentType}
               onChange={(event) => onContentTypeChange(event.target.value as CivicFeedFilters['contentType'])}
-              className="w-full appearance-none rounded-[20px] border px-11 py-3 pr-10 text-sm font-semibold outline-none transition hover:border-[var(--civic-border-strong)] sm:px-12 sm:py-3.5 sm:pr-11"
+              className="w-full appearance-none rounded-full border px-11 py-3 pr-10 text-sm font-semibold outline-none transition hover:border-[var(--civic-border-strong)] sm:px-12 sm:py-3.5 sm:pr-11"
               style={{
-                background: 'var(--civic-surface)',
+                background: 'var(--civic-surface-soft)',
                 borderColor: 'var(--civic-border)',
                 color: 'var(--civic-text)',
-                boxShadow: '0 6px 18px rgba(22,33,51,0.04)',
+                boxShadow: '0 10px 24px -20px rgba(22,33,51,0.28)',
               }}
             >
               {contentOptions.map((option) => (
@@ -106,13 +106,13 @@ export default function ViewToolbar({
           </div>
 
           <div
-            className="relative col-span-2 flex min-h-[50px] min-w-0 items-center overflow-hidden rounded-[20px] border bg-[var(--civic-surface)] pl-11 pr-1 sm:min-h-[54px] sm:pl-12 xl:col-span-1"
+            className="relative col-span-2 flex min-h-[50px] min-w-0 items-center overflow-hidden rounded-full border bg-[var(--civic-surface-soft)] pl-11 pr-1 sm:min-h-[54px] sm:pl-12 xl:col-span-1"
             style={{
               borderColor: 'var(--civic-border)',
-              boxShadow: '0 6px 18px rgba(22,33,51,0.04)',
+              boxShadow: '0 10px 24px -20px rgba(22,33,51,0.28)',
             }}
           >
-            <span className="pointer-events-none absolute left-3 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--civic-border-strong)] bg-[var(--civic-surface)] text-[var(--civic-muted)] sm:h-8 sm:w-8">
+            <span className="pointer-events-none absolute left-3 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--civic-border-strong)] bg-[var(--civic-surface-soft)] text-[var(--civic-muted)] sm:h-8 sm:w-8">
               <Icon name="search" className="text-[16px] sm:text-[18px]" />
             </span>
             <input

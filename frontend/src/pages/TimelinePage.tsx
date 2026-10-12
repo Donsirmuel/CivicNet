@@ -228,6 +228,25 @@ export default function TimelinePage() {
       showRightSidebarControls={false}
     >
       <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, var(--civic-bg) 0%, var(--civic-bg-deep) 100%)' }}>
+        <div className="px-4 pt-6 lg:px-8 lg:pt-8">
+          <div className="mx-auto flex max-w-[760px] items-end justify-between gap-6 border-b border-[var(--civic-border)] pb-5">
+            <div>
+              <p className="font-display text-4xl tracking-[-0.04em] text-[var(--civic-text)] sm:text-5xl">Home</p>
+              <p className="mt-1 text-[11px] uppercase tracking-[0.24em] text-[var(--civic-muted)]">
+                The civic feed
+              </p>
+            </div>
+
+            <span className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-[var(--civic-muted)]">
+              <span className="relative flex size-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--civic-gold)] opacity-60" />
+                <span className="relative inline-flex size-2 rounded-full bg-[var(--civic-gold)]" />
+              </span>
+              Live
+            </span>
+          </div>
+        </div>
+
         <ViewToolbar
           scope={filters.scope}
           contentType={filters.contentType}

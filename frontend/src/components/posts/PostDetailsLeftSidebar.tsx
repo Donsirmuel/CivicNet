@@ -63,8 +63,8 @@ export default function PostDetailsLeftSidebar({
             className="size-12 rounded-full"
           />
           <div className="text-left flex-1 min-w-0">
-            <p className="text-sm font-semibold text-slate-900 dark:text-white">John Citizen</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">@johncitizen</p>
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">Adejimi Lekan</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">@adejimlekan</p>
           </div>
           <Icon name="chevron_right" className="text-slate-400 flex-shrink-0" />
         </button>

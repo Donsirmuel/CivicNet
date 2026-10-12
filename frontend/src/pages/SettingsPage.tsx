@@ -143,45 +143,68 @@ export default function SettingsPage() {
 
   return (
     <StandardLayout leftSidebar={leftSidebar} showLeftSidebar showRightSidebar={false}>
-      <div className="min-h-screen px-4 py-6 lg:px-8" style={{ background: 'linear-gradient(180deg, var(--civic-bg) 0%, var(--civic-bg-deep) 100%)' }}>
-        <div className="civic-section">
-          <div className="flex flex-col gap-3 border-b pb-6 sm:flex-row sm:items-end sm:justify-between" style={{ borderColor: 'var(--civic-border)' }}>
-            <div>
-              <p className="civic-label">Your account</p>
-              <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] text-[var(--civic-text)]">Settings</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--civic-muted)]">
-                Change your details, choose what you want to receive, and save how the app works for you.
-              </p>
-            </div>
-            {saved && (
-              <div className="inline-flex items-center gap-2 rounded-md px-4 py-3 text-sm font-bold text-[var(--civic-primary)]" style={{ background: 'var(--civic-primary-glow)' }}>
-                <Icon name="check_circle" className="text-lg" />
-                Saved
+      <div className="min-h-screen px-4 py-6 lg:px-8 lg:py-8" style={{ background: 'linear-gradient(180deg, var(--civic-surface-soft) 0%, var(--civic-bg) 100%)' }}>
+        <div className="mx-auto max-w-[1400px]">
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <section className="civic-section space-y-8">
+              <div className="flex flex-col gap-3 border-b pb-6 sm:flex-row sm:items-end sm:justify-between" style={{ borderColor: 'var(--civic-border)' }}>
+                <div>
+                  <p className="civic-label">Your account</p>
+                  <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] text-[var(--civic-text)]">Settings</h1>
+                  <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--civic-muted)]">
+                    Change your details, choose what you want to receive, and save how the app works for you.
+                  </p>
+                </div>
+                {saved && (
+                  <div className="inline-flex items-center gap-2 rounded-md px-4 py-3 text-sm font-bold text-[var(--civic-primary)]" style={{ background: 'var(--civic-primary-glow)' }}>
+                    <Icon name="check_circle" className="text-lg" />
+                    Saved
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          <div className="border-b py-4 lg:hidden" style={{ borderColor: 'var(--civic-border)' }}>
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {sections.map((section) => (
-                <button
-                  key={section.id}
-                  onClick={() => scrollToSection(section.id)}
-                  className="shrink-0 rounded-full px-4 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]"
-                  style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}
-                >
-                  {section.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid gap-8 pt-8">
-            <section id="identity" className="space-y-5">
-              <div className="border-b pb-4" style={{ borderColor: 'var(--civic-border)' }}>
-                <p className="civic-label">Account</p>
-                <h2 className="mt-3 text-2xl font-black tracking-[-0.03em] text-[var(--civic-text)]">Account details</h2>
+              <div className="border-b py-4 lg:hidden" style={{ borderColor: 'var(--civic-border)' }}>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {sections.map((section) => (
+                    <button
+                      key={section.id}
+                      onClick={() => scrollToSection(section.id)}
+                      className="shrink-0 rounded-full px-4 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]"
+                      style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}
+                    >
+                      {section.label}
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="rounded-[20px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] px-5 py-5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--civic-muted)]">Theme</p>
+                  <p className="mt-2 text-base font-black tracking-[-0.03em] text-[var(--civic-text)] capitalize">{formData.theme}</p>
+                </div>
+                <div className="rounded-[20px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] px-5 py-5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--civic-muted)]">Alerts</p>
+                  <p className="mt-2 text-base font-black tracking-[-0.03em] text-[var(--civic-text)]">
+                    {formData.officialResponses || formData.civicMentions || formData.legislativeAlerts || formData.constituencyUpdates
+                      ? 'On'
+                      : 'Off'}
+                  </p>
+                </div>
+                <div className="rounded-[20px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] px-5 py-5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--civic-muted)]">Privacy</p>
+                  <p className="mt-2 text-base font-black tracking-[-0.03em] text-[var(--civic-text)]">
+                    {formData.biometricAuth ? 'Protected' : 'Standard'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-8 pt-2">
+                <section id="identity" className="space-y-5">
+                <div className="border-b pb-4" style={{ borderColor: 'var(--civic-border)' }}>
+                  <p className="civic-label">Account</p>
+                  <h2 className="mt-3 text-2xl font-black tracking-[-0.03em] text-[var(--civic-text)]">Account details</h2>
+                </div>
 
               <div className="grid gap-5 lg:grid-cols-2">
                 <div className="rounded-md p-5" style={{ background: 'var(--civic-surface-soft)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}>
@@ -226,13 +249,13 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </div>
-            </section>
+                </section>
 
-            <section id="security" className="space-y-5">
-              <div className="border-b pb-4" style={{ borderColor: 'var(--civic-border)' }}>
-                <p className="civic-label">Privacy</p>
-                <h2 className="mt-3 text-2xl font-black tracking-[-0.03em] text-[var(--civic-text)]">Privacy and access</h2>
-              </div>
+                <section id="security" className="space-y-5">
+                <div className="border-b pb-4" style={{ borderColor: 'var(--civic-border)' }}>
+                  <p className="civic-label">Privacy</p>
+                  <h2 className="mt-3 text-2xl font-black tracking-[-0.03em] text-[var(--civic-text)]">Privacy and access</h2>
+                </div>
 
               <div className="grid gap-5 lg:grid-cols-2">
                 <div className="rounded-md p-5" style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}>
@@ -262,13 +285,13 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </div>
-            </section>
+                </section>
 
-            <section id="alerts" className="space-y-5">
-              <div className="border-b pb-4" style={{ borderColor: 'var(--civic-border)' }}>
-                <p className="civic-label">Alerts</p>
-                <h2 className="mt-3 text-2xl font-black tracking-[-0.03em] text-[var(--civic-text)]">What you want to receive</h2>
-              </div>
+                <section id="alerts" className="space-y-5">
+                <div className="border-b pb-4" style={{ borderColor: 'var(--civic-border)' }}>
+                  <p className="civic-label">Alerts</p>
+                  <h2 className="mt-3 text-2xl font-black tracking-[-0.03em] text-[var(--civic-text)]">What you want to receive</h2>
+                </div>
 
               <div className="grid gap-4 md:grid-cols-2">
                 {[
@@ -323,13 +346,13 @@ export default function SettingsPage() {
                   <option value="weekly">Weekly</option>
                 </select>
               </div>
-            </section>
+                </section>
 
-            <section id="display" className="space-y-5">
-              <div className="border-b pb-4" style={{ borderColor: 'var(--civic-border)' }}>
-                <p className="civic-label">Display</p>
-                <h2 className="mt-3 text-2xl font-black tracking-[-0.03em] text-[var(--civic-text)]">App appearance</h2>
-              </div>
+                <section id="display" className="space-y-5">
+                <div className="border-b pb-4" style={{ borderColor: 'var(--civic-border)' }}>
+                  <p className="civic-label">Display</p>
+                  <h2 className="mt-3 text-2xl font-black tracking-[-0.03em] text-[var(--civic-text)]">App appearance</h2>
+                </div>
 
               <div className="grid gap-4 md:grid-cols-3">
                 {[
@@ -385,16 +408,45 @@ export default function SettingsPage() {
                   );
                 })}
               </div>
+                </section>
+
+                <section className="flex flex-col gap-3 border-t pt-6 sm:flex-row sm:justify-end" style={{ borderColor: 'var(--civic-border)' }}>
+                  <Button variant="outline" onClick={handleReset}>
+                    Reset Changes
+                  </Button>
+                  <Button variant="primary" onClick={handleSave}>
+                    Save Changes
+                  </Button>
+                </section>
+              </div>
             </section>
 
-            <section className="flex flex-col gap-3 border-t pt-6 sm:flex-row sm:justify-end" style={{ borderColor: 'var(--civic-border)' }}>
-              <Button variant="outline" onClick={handleReset}>
-                Reset Changes
-              </Button>
-              <Button variant="primary" onClick={handleSave}>
-                Save Changes
-              </Button>
-            </section>
+            <aside className="space-y-4 xl:sticky xl:top-[96px] xl:self-start">
+              <section className="rounded-[28px] border border-[var(--civic-border)] bg-[var(--civic-surface)] p-5 shadow-[0_24px_48px_-36px_rgba(22,33,51,0.28)]">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--civic-muted)]">Current setup</p>
+                <div className="mt-4 space-y-3">
+                  <div className="rounded-[20px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] p-4">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Name</p>
+                    <p className="mt-2 text-sm font-bold text-[var(--civic-text)]">{formData.fullName}</p>
+                  </div>
+                  <div className="rounded-[20px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] p-4">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Email</p>
+                    <p className="mt-2 text-sm font-bold text-[var(--civic-text)] break-words">{formData.email}</p>
+                  </div>
+                  <div className="rounded-[20px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] p-4">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Digest</p>
+                    <p className="mt-2 text-sm font-bold text-[var(--civic-text)] capitalize">{formData.emailDigest}</p>
+                  </div>
+                </div>
+              </section>
+
+              <section className="rounded-[28px] border border-[var(--civic-border)] bg-[var(--civic-surface)] p-5 shadow-[0_24px_48px_-36px_rgba(22,33,51,0.28)]">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--civic-muted)]">Note</p>
+                <p className="mt-3 text-sm leading-7 text-[var(--civic-muted)]">
+                  Your changes stay local until you save them, so you can tune the experience before committing.
+                </p>
+              </section>
+            </aside>
           </div>
         </div>
       </div>

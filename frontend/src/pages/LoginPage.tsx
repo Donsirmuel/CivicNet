@@ -11,7 +11,7 @@ const authStats = [
 ];
 
 const loginHeroImage =
-  'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1600&h=900&fit=crop';
+  '/Login-hero.jfif';
 
 export default function LoginPage() {
   const navigate = useNavigate();
