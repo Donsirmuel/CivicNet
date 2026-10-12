@@ -93,7 +93,7 @@ python manage.py populate_sample_data
 ```
 
 This creates 3 sample users:
-- **john_citizen** (citizen) - password: password123
+- **chinedu_citizen** (citizen) - password: password123
 - **jane_official** (government official) - password: password123
 - **ahmed_resident** (citizen) - password: password123
 
@@ -172,7 +172,7 @@ The API uses Token-based authentication. To get a token:
 ```bash
 curl -X POST http://localhost:8000/api-token-auth/ \
   -H "Content-Type: application/json" \
-  -d '{"username": "john_citizen", "password": "password123"}'
+  -d '{"username": "chinedu_citizen", "password": "password123"}'
 ```
 
 Include the token in subsequent requests:
