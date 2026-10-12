@@ -1,0 +1,76 @@
+%% CivicNet ER diagram — source of truth: backend/civic_connect/connectapp/models.py
+%% Import into https://mermaid.live or draw.io (Arrange → Insert → Advanced → Mermaid)
+erDiagram
+    User ||--o| UserProfile : has
+    User ||--o{ Issue : creates
+    User ||--o{ Issue : assigned_to
+    User ||--o| OfficialJurisdiction : has
+    User ||--o{ Post : authors
+    User ||--o{ Comment : authors
+    User ||--o{ Message : sends
+    User ||--o{ Message : receives
+    User ||--o{ Notification : receives
+    User ||--o{ BookmarkedItem : saves
+    Issue ||--o{ StatusHistory : logs
+    Issue ||--o{ Comment : has
+    Post ||--o{ Comment : has
+    Comment ||--o{ Comment : replies_to
+
+    User {
+        int id PK
+        string username
+        string email
+    }
+    UserProfile {
+        int user FK
+        string role
+        bool is_verified
+        string state
+        string lga
+        string ward
+    }
+    Issue {
+        string title
+        string category
+        string status
+        string scope
+        string priority
+        string state
+        string lga
+        string ward
+        int created_by FK
+        int assigned_to FK
+    }
+    StatusHistory {
+        int issue FK
+        string status
+        int updated_by FK
+        string note
+    }
+    OfficialJurisdiction {
+        int official FK
+        string jurisdiction_level
+    }
+    Post {
+        int author FK
+        string content
+    }
+    Comment {
+        int author FK
+        int post FK
+        int issue FK
+        int parent FK
+    }
+    Message {
+        int sender FK
+        int receiver FK
+        bool is_read
+    }
+    Notification {
+        int user FK
+        string notification_type
+    }
+    BookmarkedItem {
+        int user FK
+        string item_type
+    }
