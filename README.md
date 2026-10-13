@@ -142,8 +142,7 @@ cp .env.vps.example .env.vps   # fill in secrets + domain
 ./deploy.sh --createsuperuser  # admin account
 ```
 
-`deploy.sh` generates secrets into `.env.vps` (gitignored, never commit it) on first run. Postgres data lives in `./data/postgres` in the work tree (also gitignored — back it up with the rest of the VPS). Set `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS` to your domain, and flip `SECURE_SSL_REDIRECT=True` once TLS terminates in front. After first deploy, paste the live URL at the top of this file.
-
+`deploy.sh` generates secrets into `.env.vps` (gitignored, never commit it) on first run. Postgres data lives in `./data/postgres` in the work tree (also gitignored — back it up with the rest of the VPS). Set `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS` to your domain, and flip `SECURE_SSL_REDIRECT=True` once TLS terminates in front.
 ## Project structure
 
 ```
