@@ -4,6 +4,7 @@ import { Button, Icon } from '../components/common';
 import StandardLayout from '../layouts/StandardLayout';
 import { commentsService, postsService } from '../services';
 import type { Comment as BackendComment } from '../types';
+import type { Post } from '../components/issues/PostCard';
 import { convertBackendPostToPost } from '../utils/dataMappers';
 
 interface CommentView {
@@ -13,6 +14,7 @@ interface CommentView {
     username: string;
     avatar: string;
     verified?: boolean;
+    office?: string;
   };
   content: string;
   timestamp: string;
@@ -20,32 +22,6 @@ interface CommentView {
   liked?: boolean;
   replies?: CommentView[];
 }
-
-const fallbackComments: CommentView[] = [
-  {
-    id: '1',
-    author: {
-      name: 'Amina Yusuf',
-      username: '@amina.yusuf',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
-    },
-    content: 'This is a helpful update. Please keep posting what changes after the next inspection visit.',
-    timestamp: '1h ago',
-    likes: 4,
-  },
-  {
-    id: '2',
-    author: {
-      name: 'Works Office',
-      username: '@works.office',
-      avatar: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=100&h=100&fit=crop',
-      verified: true,
-    },
-    content: 'The engineering team has been informed and a response will be posted after review.',
-    timestamp: '32m ago',
-    likes: 8,
-  },
-];
 
 function formatRelativeTime(isoDate: string) {
   const created = new Date(isoDate);
@@ -72,8 +48,9 @@ function mapComment(comment: BackendComment): CommentView {
       avatar:
         comment.author.avatar ||
         comment.author.profile_picture ||
-        'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop',
+        '',
       verified: comment.author.role === 'official',
+      office: comment.author.jurisdiction || comment.author.location || 'Official office',
     },
     content: comment.content,
     timestamp: formatRelativeTime(comment.created_at),
@@ -100,43 +77,48 @@ function updateNestedComments(
   });
 }
 
+const AVATAR_COLORS = ['#6b4f3a', '#0a6a3b', '#b8912f'];
+
+function avatarColor(seed: string): string {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+}
+
+function initialsFor(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length > 1 && parts[0][0] && parts[1][0]) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return name.trim().slice(0, 2).toUpperCase() || 'CI';
+}
+
+function isFallbackAvatar(url?: string): boolean {
+  if (!url) return true;
+  return url.includes('unsplash');
+}
+
+function AvatarCircle({ name, seed, size = 'size-11' }: { name: string; seed?: string; size?: string }) {
+  return (
+    <div
+      aria-hidden
+      className={`${size} flex shrink-0 items-center justify-center rounded-full text-sm font-bold text-white`}
+      style={{ backgroundColor: avatarColor(seed || name) }}
+    >
+      {initialsFor(name)}
+    </div>
+  );
+}
+
 export default function PostDetailsPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [post, setPost] = useState(() =>
-    convertBackendPostToPost({
-      id: Number(id) || 1,
-      content: 'Loading post...',
-      author: {
-        id: 1,
-        username: 'citizen',
-        email: '',
-        first_name: 'Citizen',
-        last_name: '',
-        bio: '',
-        location: '',
-        profile_picture: '',
-        avatar: '',
-        phone: '',
-        jurisdiction: '',
-        role: 'citizen',
-        cover_image: '',
-        banner: '',
-        name: '',
-        full_name: '',
-      },
-      likes: 0,
-      comments: 0,
-      shares: 0,
-      is_pinned: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }),
-  );
+  const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<CommentView[]>([]);
   const [commentText, setCommentText] = useState('');
+  const [linkCopied, setLinkCopied] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -152,10 +134,10 @@ export default function PostDetailsPage() {
         ]);
 
         setPost(convertBackendPostToPost(postData));
-        setComments(commentsData.length ? commentsData.map(mapComment) : fallbackComments);
+        setComments(commentsData.map(mapComment));
       } catch (err) {
         console.error('Failed to load post details:', err);
-        setComments(fallbackComments);
+        setComments([]);
         setError('We could not load the full post right now.');
       } finally {
         setIsLoading(false);
@@ -172,45 +154,66 @@ export default function PostDetailsPage() {
   }, [comments]);
 
   const handleLike = async () => {
-    const previous = post.liked;
+    if (!post) return;
+    const wasLiked = post.liked;
     const previousLikes = post.stats.likes;
 
-    setPost((current) => ({
-      ...current,
-      liked: !current.liked,
-      stats: {
-        ...current.stats,
-        likes: current.liked ? current.stats.likes - 1 : current.stats.likes + 1,
-      },
-    }));
+    setPost((current) => {
+      if (!current) return current;
+      return {
+        ...current,
+        liked: !current.liked,
+        stats: {
+          ...current.stats,
+          likes: current.liked ? current.stats.likes - 1 : current.stats.likes + 1,
+        },
+      };
+    });
 
     try {
-      await postsService.likePost(Number(post.id));
+      if (wasLiked) {
+        await postsService.unlikePost(Number(post.id));
+      } else {
+        await postsService.likePost(Number(post.id));
+      }
     } catch (err) {
       console.error('Failed to like post:', err);
-      setPost((current) => ({
-        ...current,
-        liked: previous,
-        stats: { ...current.stats, likes: previousLikes },
-      }));
+      setPost((current) => {
+        if (!current) return current;
+        return {
+          ...current,
+          liked: wasLiked,
+          stats: { ...current.stats, likes: previousLikes },
+        };
+      });
     }
   };
 
   const handleBookmark = () => {
-    setPost((current) => ({ ...current, bookmarked: !current.bookmarked }));
+    setPost((current) => {
+      if (!current) return current;
+      return { ...current, bookmarked: !current.bookmarked };
+    });
   };
 
   const handleShare = async () => {
+    if (!post) return;
     const url = `${window.location.origin}/post/${post.id}`;
-    setPost((current) => ({
-      ...current,
-      stats: { ...current.stats, shares: current.stats.shares + 1 },
-    }));
+    setPost((current) => {
+      if (!current) return current;
+      return {
+        ...current,
+        stats: { ...current.stats, shares: current.stats.shares + 1 },
+      };
+    });
 
     try {
       await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
     } catch (err) {
       console.error('Unable to copy post link:', err);
+      window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -232,7 +235,7 @@ export default function PostDetailsPage() {
       author: {
         name: 'You',
         username: '@you',
-        avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop',
+        avatar: '',
       },
       content: commentText.trim(),
       timestamp: 'now',
@@ -253,24 +256,61 @@ export default function PostDetailsPage() {
     }
   };
 
-  const CommentItem = ({ comment, depth = 0 }: { comment: CommentView; depth?: number }) => (
+  const CommentItem = ({ comment, depth = 0 }: { comment: CommentView; depth?: number }) => {
+    if (comment.author.verified) {
+      return (
+        <div className={depth > 0 ? 'ml-5 border-l pl-4 sm:ml-8 sm:pl-5' : ''} style={depth > 0 ? { borderColor: 'var(--civic-border)' } : undefined}>
+          <article className="rounded-[16px] border-l-4 bg-[#eef7f0] px-5 py-5" style={{ borderLeftColor: 'var(--civic-primary)' }}>
+            <p className="text-[12px] font-bold text-[var(--civic-primary)]">
+              Verified reply · {comment.author.name}, {comment.author.office || 'Official office'}
+            </p>
+            <p className="mt-1 text-xs text-[var(--civic-muted)]">
+              {comment.author.username} - {comment.timestamp}
+            </p>
+            <p className="mt-3 text-[15px] leading-7 text-[var(--civic-muted)]">{comment.content}</p>
+
+            <div className="mt-4 flex flex-wrap items-center gap-4 text-[12px] text-[var(--civic-muted)]">
+              <button
+                onClick={() => handleCommentLike(comment.id)}
+                className={`inline-flex items-center gap-2 transition ${
+                  comment.liked ? 'text-[var(--civic-primary)]' : 'hover:text-[var(--civic-text)]'
+                }`}
+              >
+                <Icon name="thumb_up" filled={comment.liked} className="text-[18px]" />
+                <span>Like</span>
+                <span className="font-semibold text-[var(--civic-text)]">{comment.likes}</span>
+              </button>
+            </div>
+          </article>
+
+          {comment.replies?.length ? (
+            <div className="mt-4 space-y-4">
+              {comment.replies.map((reply) => (
+                <CommentItem key={reply.id} comment={reply} depth={depth + 1} />
+              ))}
+            </div>
+          ) : null}
+        </div>
+      );
+    }
+
+    return (
     <div className={depth > 0 ? 'ml-5 border-l pl-4 sm:ml-8 sm:pl-5' : ''} style={depth > 0 ? { borderColor: 'var(--civic-border)' } : undefined}>
-      <article className="rounded-md px-5 py-5" style={{ background: 'var(--civic-surface)', boxShadow: 'var(--civic-shadow-soft)' }}>
+      <article className="rounded-[16px] border border-[var(--civic-border)] bg-white px-5 py-5">
         <div className="flex items-start gap-3">
-          <img
-            src={comment.author.avatar}
-            alt={comment.author.name}
-            className="size-11 rounded-md object-cover"
-          />
+          {isFallbackAvatar(comment.author.avatar) ? (
+            <AvatarCircle name={comment.author.name} seed={comment.author.username} />
+          ) : (
+            <img
+              src={comment.author.avatar}
+              alt={comment.author.name}
+              className="size-11 rounded-[12px] object-cover"
+            />
+          )}
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-sm font-bold text-[var(--civic-text)]">{comment.author.name}</p>
-              {comment.author.verified && (
-                <span className="civic-chip-active">
-                  Official
-                </span>
-              )}
             </div>
             <p className="mt-1 text-xs text-[var(--civic-muted)]">
               {comment.author.username} - {comment.timestamp}
@@ -302,7 +342,8 @@ export default function PostDetailsPage() {
         </div>
       ) : null}
     </div>
-  );
+    );
+  };
 
   return (
     <StandardLayout showRightSidebar={false}>
@@ -317,12 +358,17 @@ export default function PostDetailsPage() {
                 <Icon name="arrow_back" className="text-lg" />
               </button>
               <div>
-                <p className="text-sm font-bold text-[var(--civic-text)]">Post detail</p>
-                <p className="mt-1 text-xs text-[var(--civic-muted)]">Post, replies, and context</p>
+                <p className="text-sm font-bold text-[var(--civic-text)]">Post</p>
+                <p className="mt-1 text-xs text-[var(--civic-muted)]">Replies and context</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
+              {linkCopied && (
+                <span role="status" className="rounded-full px-3 py-1.5 text-xs font-semibold text-[var(--civic-primary)]" style={{ background: 'var(--civic-primary-glow)' }}>
+                  Link copied
+                </span>
+              )}
               <button
                 onClick={handleShare}
                 className="civic-icon-button size-10 rounded-full"
@@ -335,7 +381,7 @@ export default function PostDetailsPage() {
                 className="civic-icon-button size-10 rounded-full"
                 aria-label="Save post"
               >
-                <Icon name="bookmark" filled={post.bookmarked} className="text-base" />
+                <Icon name="bookmark" filled={post?.bookmarked} className="text-base" />
               </button>
             </div>
           </div>
@@ -350,9 +396,9 @@ export default function PostDetailsPage() {
               </div>
             )}
 
-            <article className="overflow-hidden rounded-md" style={{ background: 'var(--civic-surface)', boxShadow: 'var(--civic-shadow-soft)' }}>
-              {isLoading ? (
-                <div className="h-80 animate-pulse" style={{ background: 'var(--civic-surface-strong)' }} />
+            <article className="overflow-hidden rounded-[20px] border border-[var(--civic-border)] bg-white">
+              {isLoading || !post ? (
+                <div className="h-80 animate-pulse bg-[var(--civic-surface-strong)]" />
               ) : (
                 <>
                   {post.image && (
@@ -365,11 +411,15 @@ export default function PostDetailsPage() {
 
                   <div className="space-y-5 px-5 py-6 sm:px-6">
                     <div className="flex items-start gap-3">
-                      <img
-                        src={post.author.avatar}
-                        alt={post.author.name}
-                        className="size-12 rounded-md object-cover"
-                      />
+                      {isFallbackAvatar(post.author.avatar) ? (
+                        <AvatarCircle name={post.author.name} seed={post.author.username} size="size-12" />
+                      ) : (
+                        <img
+                          src={post.author.avatar}
+                          alt={post.author.name}
+                          className="size-12 rounded-[12px] object-cover"
+                        />
+                      )}
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="text-sm font-bold text-[var(--civic-text)]">{post.author.name}</p>
@@ -387,9 +437,15 @@ export default function PostDetailsPage() {
 
                     <div className="space-y-3">
                       {post.title && (
-                        <h1 className="font-display text-[1.8rem] leading-snug tracking-[-0.02em] text-[var(--civic-text-strong)] sm:text-[2.2rem]">
+                        <h1 className="font-display text-[1.8rem] leading-snug tracking-[-0.02em] text-[var(--civic-text-strong)] sm:text-[2rem]">
                           {post.title}
                         </h1>
+                      )}
+                      {post.location && (
+                        <p className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[var(--civic-primary)]">
+                          <Icon name="location_on" className="text-[16px]" />
+                          {post.location.lga}, {post.location.state}
+                        </p>
                       )}
                       <p className="text-[15px] leading-8 text-[var(--civic-muted)]">{post.content}</p>
                     </div>
@@ -404,19 +460,19 @@ export default function PostDetailsPage() {
                     </div>
 
                     <div className="grid grid-cols-3 gap-3 border-t pt-5" style={{ borderColor: 'var(--civic-border)' }}>
-                      <div className="rounded-md px-3 py-4 sm:px-4" style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-ghost-border)' }}>
+                      <div className="rounded-[16px] bg-[var(--civic-surface-strong)] px-3 py-4 sm:px-4">
                         <p className="font-display text-xl tracking-[-0.01em] text-[var(--civic-text)] sm:text-2xl">{post.stats.likes}</p>
                         <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--civic-muted)]">
-                          Likes
+                          Support
                         </p>
                       </div>
-                      <div className="rounded-md px-3 py-4 sm:px-4" style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-ghost-border)' }}>
+                      <div className="rounded-[16px] bg-[var(--civic-surface-strong)] px-3 py-4 sm:px-4">
                         <p className="font-display text-xl tracking-[-0.01em] text-[var(--civic-text)] sm:text-2xl">{totalComments}</p>
                         <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--civic-muted)]">
                           Comments
                         </p>
                       </div>
-                      <div className="rounded-md px-3 py-4 sm:px-4" style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-ghost-border)' }}>
+                      <div className="rounded-[16px] bg-[var(--civic-surface-strong)] px-3 py-4 sm:px-4">
                         <p className="font-display text-xl tracking-[-0.01em] text-[var(--civic-text)] sm:text-2xl">{post.stats.shares}</p>
                         <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--civic-muted)]">
                           Shares
@@ -432,7 +488,7 @@ export default function PostDetailsPage() {
                         }`}
                       >
                         <Icon name="thumb_up" filled={post.liked} className="text-[18px]" />
-                        <span>Like</span>
+                        <span>Support</span>
                       </button>
 
                       <button
@@ -459,10 +515,11 @@ export default function PostDetailsPage() {
             </article>
 
             <section id="post-comments" className="space-y-4">
-              <div className="rounded-md px-5 py-5" style={{ background: 'var(--civic-surface)', boxShadow: 'var(--civic-shadow-soft)' }}>
+              <div className="rounded-[20px] border border-[var(--civic-border)] bg-white px-5 py-5">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-lg font-bold text-[var(--civic-text)]">Comments</p>
+                    <p className="civic-label">Replies</p>
+                    <p className="mt-2 font-display text-xl tracking-[-0.01em] text-[var(--civic-text)]">Replies and comments</p>
                     <p className="mt-2 text-sm text-[var(--civic-muted)]">Reply or leave a quick follow-up.</p>
                   </div>
                   <span className="civic-chip">{totalComments} total</span>
@@ -471,10 +528,10 @@ export default function PostDetailsPage() {
                 <textarea
                   value={commentText}
                   onChange={(event) => setCommentText(event.target.value)}
-                  placeholder="Write a comment"
+                  placeholder="Write a reply..."
                   rows={3}
-                  className="mt-4 w-full resize-none rounded-md px-4 py-4 text-[15px] leading-7 text-[var(--civic-text)] outline-none transition"
-                  style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-ghost-border)' }}
+                  className="mt-4 w-full resize-none rounded-[12px] bg-[var(--civic-surface-strong)] px-4 py-4 text-[15px] leading-7 text-[var(--civic-text)] outline-none transition"
+                  style={{ boxShadow: 'inset 0 0 0 1px var(--civic-ghost-border)' }}
                 />
 
                 <div className="mt-4 flex items-center justify-between gap-3">
@@ -486,13 +543,33 @@ export default function PostDetailsPage() {
                       <Icon name="attach_file" className="text-[18px]" />
                     </button>
                   </div>
-                  <Button variant="primary" onClick={handleCommentSubmit}>
-                    Send Comment
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        if (!commentText.trim()) return;
+                        if (window.confirm('Clear this reply? Your draft will be removed.')) {
+                          setCommentText('');
+                        }
+                      }}
+                      className="rounded-[12px] px-4 py-2.5 text-sm font-semibold text-[var(--civic-text)] transition hover:brightness-[0.98]"
+                      style={{ background: 'var(--civic-surface)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}
+                    >
+                      Clear
+                    </button>
+                    <Button variant="primary" onClick={handleCommentSubmit}>
+                      Send reply
+                    </Button>
+                  </div>
                 </div>
               </div>
 
               <div className="space-y-4">
+                {!comments.length && (
+                  <div className="rounded-[20px] border border-[var(--civic-border)] bg-white px-5 py-8 text-center">
+                    <p className="text-sm font-bold text-[var(--civic-text)]">No comments yet</p>
+                    <p className="mt-1 text-sm text-[var(--civic-muted)]">If you know something about this, say it above.</p>
+                  </div>
+                )}
                 {comments.map((comment) => (
                   <CommentItem key={comment.id} comment={comment} />
                 ))}
@@ -501,15 +578,17 @@ export default function PostDetailsPage() {
             </div>
 
             <aside className="space-y-4 xl:sticky xl:top-[96px] xl:self-start">
-              <section className="civic-panel-soft p-5">
-                <p className="civic-label">Post details</p>
+              {post && (
+              <>
+              <section className="rounded-[20px] border border-[var(--civic-border)] bg-white p-5">
+                <p className="civic-label">About this post</p>
                 <div className="mt-4 space-y-3 text-sm text-[var(--civic-muted)]">
                   <div className="flex items-start justify-between gap-3">
                     <span>Type</span>
                     <span className="font-semibold text-[var(--civic-text)]">{post.type === 'issue' ? 'Report' : 'Update'}</span>
                   </div>
                   <div className="flex items-start justify-between gap-3">
-                    <span>Coverage</span>
+                    <span>Area</span>
                     <span className="font-semibold text-[var(--civic-text)]">{post.scope}</span>
                   </div>
                   <div className="flex items-start justify-between gap-3">
@@ -519,9 +598,9 @@ export default function PostDetailsPage() {
                 </div>
               </section>
 
-              <section className="civic-panel-soft p-5">
+              <section className="rounded-[20px] border border-[var(--civic-border)] bg-white p-5">
                 <p className="civic-label">Location</p>
-                <div className="mt-4 rounded-md px-4 py-4" style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-ghost-border)' }}>
+                <div className="mt-4 rounded-[16px] bg-[var(--civic-surface-strong)] px-4 py-4">
                   <div className="flex items-center gap-2 text-[var(--civic-primary)]">
                     <Icon name="location_on" className="text-[18px]" />
                     <span className="text-sm font-semibold text-[var(--civic-text)]">
@@ -531,19 +610,21 @@ export default function PostDetailsPage() {
                 </div>
               </section>
 
-              <section className="civic-panel-soft p-5">
+              <section className="rounded-[20px] border border-[var(--civic-border)] bg-white p-5">
                 <p className="civic-label">Activity</p>
                 <div className="mt-4 grid gap-3">
-                  <div className="rounded-md px-4 py-4" style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-ghost-border)' }}>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Likes</p>
+                  <div className="rounded-[16px] bg-[var(--civic-surface-strong)] px-4 py-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Support</p>
                     <p className="mt-2 font-display text-2xl tracking-[-0.02em] text-[var(--civic-text)]">{post.stats.likes}</p>
                   </div>
-                  <div className="rounded-md px-4 py-4" style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-ghost-border)' }}>
+                  <div className="rounded-[16px] bg-[var(--civic-surface-strong)] px-4 py-4">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Replies</p>
                     <p className="mt-2 font-display text-2xl tracking-[-0.02em] text-[var(--civic-text)]">{totalComments}</p>
                   </div>
                 </div>
               </section>
+              </>
+              )}
             </aside>
           </div>
         </div>

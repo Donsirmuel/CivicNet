@@ -5,9 +5,9 @@ import { Button, Input, Logo, Icon } from '../components/common';
 import { authService } from '../services';
 
 const accessHighlights = [
-  'Join local conversations',
-  'Post updates and reports',
-  'Follow official replies',
+  'Report problems where you live',
+  'Follow replies from officials',
+  'See what is happening near you',
 ];
 
 const registerHeroImage =
@@ -79,6 +79,13 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen px-5 py-5 text-[var(--civic-text)] sm:px-8 lg:px-10">
+      <button
+        type="button"
+        onClick={() => navigate('/')}
+        className="mb-4 inline-flex items-center gap-1 text-sm font-semibold text-[var(--civic-muted)] transition hover:text-[var(--civic-text)]"
+      >
+        ← Back to home
+      </button>
       <div
         className="mx-auto grid min-h-[calc(100vh-2.5rem)] max-w-[1400px] overflow-hidden rounded-md"
         style={{ background: 'var(--civic-surface)', boxShadow: 'var(--civic-shadow)' }}
@@ -112,12 +119,11 @@ export default function RegisterPage() {
               </div>
 
               <div className="mt-24 max-w-2xl">
-                <span className="civic-chip-active">Create your account</span>
                 <h1 className="font-display mt-6 text-6xl leading-[0.95] tracking-[-0.02em] text-[var(--civic-text-strong)]">
-                  Speak up, share updates, and follow what matters in your area.
+                  Something wrong in your area? Say so here.
                 </h1>
                 <p className="mt-6 max-w-xl text-lg leading-8 text-[var(--civic-muted)]">
-                  Create your CivicNet account to post, report issues, and stay close to the conversations shaping your community.
+                  Create an account to report the problem, follow it as it moves, and see the reply when an official answers.
                 </p>
               </div>
             </div>
@@ -139,13 +145,13 @@ export default function RegisterPage() {
 
             <div className="relative z-10 mt-8 max-w-[420px] self-end">
               <div className="civic-auth-float-card">
-                <p className="civic-label">What you can do</p>
+                <p className="civic-label">What you get</p>
                 <p className="mt-3 text-base font-bold text-[var(--civic-text)]">
-                  Share updates, send reports, and keep track of replies without losing the bigger picture.
+                  Everything you report stays on your profile, with its replies next to it.
                 </p>
                 <div className="mt-4 flex items-center gap-2 text-[var(--civic-primary)]">
                   <span className="size-2 rounded-full bg-[var(--civic-primary)]" />
-                  <span className="text-xs font-semibold uppercase tracking-[0.16em]">Ready to join</span>
+                  <span className="text-xs font-semibold uppercase tracking-[0.16em]">Free to join</span>
                 </div>
               </div>
             </div>
@@ -162,13 +168,13 @@ export default function RegisterPage() {
               >
                 <div className="grid grid-cols-2 gap-2 rounded-full p-1" style={{ background: 'var(--civic-surface-inset)' }}>
                   <div className="inline-flex min-h-11 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--civic-primary)_0%,var(--civic-primary-deep)_100%)] text-sm font-semibold text-[var(--civic-primary-contrast)]">
-                    Create Account
+                    Sign up
                   </div>
                   <Link
                     to="/login"
                     className="inline-flex min-h-11 items-center justify-center rounded-full text-sm font-semibold text-[var(--civic-muted)] transition hover:text-[var(--civic-text)]"
                   >
-                    Login
+                    Log in
                   </Link>
                 </div>
 
@@ -183,7 +189,7 @@ export default function RegisterPage() {
 
                 <form onSubmit={handleSubmit} className="mt-8 space-y-5">
                   <Input
-                    label="Full Name"
+                    label="Full name"
                     type="text"
                     name="fullName"
                     placeholder="Amina Yusuf Okonjo"
@@ -231,7 +237,7 @@ export default function RegisterPage() {
                   )}
 
                   <Button type="submit" size="lg" fullWidth loading={loading} icon="arrow_forward">
-                    Create Account
+                    Sign up
                   </Button>
 
                   <button
@@ -285,18 +291,17 @@ export default function RegisterPage() {
                 />
                 <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.14em] text-white/90">
                   <span>Join CivicNet</span>
-                  <span>Get started</span>
+                  <span>Sign up free</span>
                 </div>
               </div>
             </div>
 
             <div className="mt-6 space-y-4">
-              <span className="civic-chip-active">Create your account</span>
               <h1 className="font-display text-3xl leading-tight tracking-[-0.02em] text-[var(--civic-text)]">
-                Report issues, share updates, and follow progress in your area.
+                Something wrong in your area? Say so here.
               </h1>
               <p className="text-sm leading-6 text-[var(--civic-muted)]">
-                Join CivicNet to participate in local conversations and keep up with official responses.
+                Join to report problems near you and see the reply when an official answers.
               </p>
 
               <div className="space-y-2">
@@ -318,19 +323,19 @@ export default function RegisterPage() {
             <div className="mt-8 rounded-md p-5" style={{ background: 'var(--civic-surface)', boxShadow: 'var(--civic-shadow-soft)' }}>
               <div className="grid grid-cols-2 gap-2 rounded-full p-1" style={{ background: 'var(--civic-surface-inset)' }}>
                 <div className="inline-flex min-h-11 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--civic-primary)_0%,var(--civic-primary-deep)_100%)] text-sm font-semibold text-[var(--civic-primary-contrast)]">
-                  Create Account
+                  Sign up
                 </div>
                 <Link
                   to="/login"
                   className="inline-flex min-h-11 items-center justify-center rounded-full text-sm font-semibold text-[var(--civic-muted)]"
                 >
-                  Login
+                  Log in
                 </Link>
               </div>
 
               <form onSubmit={handleSubmit} className="mt-6 space-y-5">
                 <Input
-                  label="Full Name"
+                  label="Full name"
                   type="text"
                   name="fullName"
                   placeholder="Amina Yusuf Okonjo"
@@ -378,7 +383,7 @@ export default function RegisterPage() {
                 )}
 
                 <Button type="submit" size="lg" fullWidth loading={loading} icon="arrow_forward">
-                  Create Account
+                  Sign up
                 </Button>
 
                 <div className="flex justify-center">

@@ -26,12 +26,19 @@ export default function NotFoundPage() {
 
           <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
             <Button variant="primary" size="lg" onClick={() => navigate('/feed')}>
-              Go to Feed
+              Go to feed
             </Button>
             <Button variant="outline" size="lg" onClick={() => navigate('/')}>
-              Back to Start
+              Back to start
             </Button>
           </div>
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="mt-6 text-sm font-semibold text-[var(--civic-muted)] transition hover:text-[var(--civic-text)]"
+          >
+            ← Back to home
+          </button>
         </div>
       </div>
     </div>

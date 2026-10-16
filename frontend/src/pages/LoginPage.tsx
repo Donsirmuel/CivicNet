@@ -5,9 +5,9 @@ import { Button, Input, Logo, Icon } from '../components/common';
 import { authService } from '../services';
 
 const authStats = [
-  { value: '12.4M', label: 'Active citizens' },
-  { value: '98.2%', label: 'Reply rate' },
-  { value: '24/7', label: 'Live access' },
+  { value: '774', label: 'LGAs covered' },
+  { value: '36+1', label: 'States + FCT' },
+  { value: 'Free', label: 'To use' },
 ];
 
 const loginHeroImage =
@@ -56,6 +56,13 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen px-5 py-5 text-[var(--civic-text)] sm:px-8 lg:px-10">
+      <button
+        type="button"
+        onClick={() => navigate('/')}
+        className="mb-4 inline-flex items-center gap-1 text-sm font-semibold text-[var(--civic-muted)] transition hover:text-[var(--civic-text)]"
+      >
+        ← Back to home
+      </button>
       <div
         className="mx-auto grid min-h-[calc(100vh-2.5rem)] max-w-[1400px] overflow-hidden rounded-md"
         style={{ background: 'var(--civic-surface)', boxShadow: 'var(--civic-shadow)' }}
@@ -89,12 +96,11 @@ export default function LoginPage() {
               </div>
 
               <div className="mt-24 max-w-2xl">
-                <span className="civic-chip-active">Live platform access</span>
                 <h1 className="font-display mt-6 text-6xl leading-[0.95] tracking-[-0.02em] text-[var(--civic-text-strong)]">
-                  Follow local issues, official replies, and community updates in one place.
+                  Pick up where your reports left off.
                 </h1>
                 <p className="mt-6 max-w-xl text-lg leading-8 text-[var(--civic-muted)]">
-                  Sign in to track reports, join discussions, and keep up with what is happening around you.
+                  Sign in to follow your reports, see if an official has replied, and catch up on problems near you.
                 </p>
               </div>
             </div>
@@ -110,13 +116,13 @@ export default function LoginPage() {
 
             <div className="relative z-10 mt-8 max-w-[420px] self-end">
               <div className="civic-auth-float-card">
-                <p className="civic-label">Live signal</p>
+                <p className="civic-label">How it works</p>
                 <p className="mt-3 text-base font-bold text-[var(--civic-text)]">
-                  People can report, follow replies, and stay close to local updates in one place.
+                  Your reports stay on your profile, and you get told when an official replies.
                 </p>
                 <div className="mt-4 flex items-center gap-2 text-[var(--civic-primary)]">
                   <span className="size-2 rounded-full bg-[var(--civic-primary)]" />
-                  <span className="text-xs font-semibold uppercase tracking-[0.16em]">Always on</span>
+                  <span className="text-xs font-semibold uppercase tracking-[0.16em]">Nothing goes silent</span>
                 </div>
               </div>
             </div>
@@ -136,16 +142,16 @@ export default function LoginPage() {
                     to="/register"
                     className="inline-flex min-h-11 items-center justify-center rounded-full text-sm font-semibold text-[var(--civic-muted)] transition hover:text-[var(--civic-text)]"
                   >
-                    Create Account
+                    Sign up
                   </Link>
                   <div className="inline-flex min-h-11 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--civic-primary)_0%,var(--civic-primary-deep)_100%)] text-sm font-semibold text-[var(--civic-primary-contrast)]">
-                    Login
+                    Log in
                   </div>
                 </div>
 
                 <div className="mt-8">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--civic-muted)]">
-                    Access your account
+                    Log in to your account
                   </p>
                   <h2 className="font-display mt-3 text-3xl tracking-[-0.02em] text-[var(--civic-text)]">
                     Welcome back
@@ -175,26 +181,30 @@ export default function LoginPage() {
                     required
                   />
 
+                  <div className="flex justify-end">
+                    <Link
+                      to="/forgot-password"
+                      className="text-sm font-semibold text-[var(--civic-primary)] hover:underline"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
+
                   {error && (
                     <div className="rounded-md bg-[rgba(218,92,78,0.1)] px-4 py-3 text-sm text-[var(--civic-danger)]">
                       {error}
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between text-[12px] text-[var(--civic-muted)]">
-                    <span>Keep me signed in</span>
-                    <span>Secure access</span>
-                  </div>
-
                   <Button type="submit" size="lg" fullWidth loading={loading} icon="arrow_forward">
-                    Sign In
+                    Sign in
                   </Button>
 
                   <div className="space-y-4 pt-2">
                     <div className="flex items-center gap-4">
                       <div className="h-px flex-1" style={{ background: 'var(--civic-border)' }} />
                       <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--civic-muted)]">
-                        Continue with
+                        Or continue with
                       </span>
                       <div className="h-px flex-1" style={{ background: 'var(--civic-border)' }} />
                     </div>
@@ -239,12 +249,11 @@ export default function LoginPage() {
             </div>
 
             <div className="mt-6 space-y-4">
-              <span className="civic-chip-active">Live platform access</span>
               <h1 className="font-display text-3xl leading-tight tracking-[-0.02em] text-[var(--civic-text)]">
-                Follow local issues and official replies in one place.
+                Pick up where your reports left off.
               </h1>
               <p className="text-sm leading-6 text-[var(--civic-muted)]">
-                Sign in to track reports, post updates, and stay close to conversations shaping your community.
+                Sign in to follow your reports, see if an official has replied, and catch up on problems near you.
               </p>
 
               <div className="grid grid-cols-3 gap-2">
@@ -269,10 +278,10 @@ export default function LoginPage() {
                   to="/register"
                   className="inline-flex min-h-11 items-center justify-center rounded-full text-sm font-semibold text-[var(--civic-muted)]"
                 >
-                  Create Account
+                  Sign up
                 </Link>
                 <div className="inline-flex min-h-11 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--civic-primary)_0%,var(--civic-primary-deep)_100%)] text-sm font-semibold text-[var(--civic-primary-contrast)]">
-                  Login
+                  Log in
                 </div>
               </div>
 
@@ -298,6 +307,15 @@ export default function LoginPage() {
                   onChange={(event) => setPassword(event.target.value)}
                   required
                 />
+
+                <div className="flex justify-end">
+                  <Link
+                    to="/forgot-password"
+                    className="text-sm font-semibold text-[var(--civic-primary)] hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
 
                 {error && (
                   <div className="rounded-md bg-[rgba(218,92,78,0.1)] px-4 py-3 text-sm text-[var(--civic-danger)]">
