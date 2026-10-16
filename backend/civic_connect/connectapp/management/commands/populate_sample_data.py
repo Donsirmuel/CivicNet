@@ -12,7 +12,7 @@ class Command(BaseCommand):
         # Create sample users
         users_data = [
             {'username': 'chinedu_citizen', 'email': 'chinedu@example.com', 'first_name': 'Chinedu', 'last_name': 'Okafor'},
-            {'username': 'jane_official', 'email': 'jane@government.ng', 'first_name': 'Jane', 'last_name': 'Smith'},
+            {'username': 'funmi_works', 'email': 'funmi@works.lagosstate.gov.ng', 'first_name': 'Funmi', 'last_name': 'Adeleke'},
             {'username': 'ahmed_resident', 'email': 'ahmed@example.com', 'first_name': 'Ahmed', 'last_name': 'Hassan'},
         ]
 
@@ -36,8 +36,8 @@ class Command(BaseCommand):
         UserProfile.objects.get_or_create(
             user=users[0],
             defaults={
-                'bio': 'A concerned citizen reporting issues in the community',
-                'location': 'Lagos, Nigeria',
+                'bio': 'I report bad roads and dumped refuse around Surulere.',
+                'location': 'Surulere, Lagos',
                 'role': 'citizen',
             }
         )
@@ -45,8 +45,8 @@ class Command(BaseCommand):
         UserProfile.objects.get_or_create(
             user=users[1],
             defaults={
-                'bio': 'Government official responsible for community development',
-                'location': 'Lagos State Government',
+                'bio': 'Works officer. I reply to road and drainage reports and post what happens next.',
+                'location': 'Lagos State Works Office',
                 'role': 'official',
                 'is_verified': True,
                 'state': 'Lagos',
@@ -59,8 +59,8 @@ class Command(BaseCommand):
         UserProfile.objects.get_or_create(
             user=users[2],
             defaults={
-                'bio': 'Community resident and activist',
-                'location': 'Surulere, Lagos',
+                'bio': 'Resident of Ikeja. I photograph faults and follow up until they are fixed.',
+                'location': 'Ikeja, Lagos',
                 'role': 'citizen',
             }
         )
@@ -79,37 +79,37 @@ class Command(BaseCommand):
         # Create sample issues with status history
         issue_data = [
             {
-                'title': 'Pothole on Shomolu Street',
-                'description': 'There is a large pothole on the main road causing traffic congestion',
+                'title': 'Crater pothole on Shomolu Road by the bus stop',
+                'description': 'A wide pothole sits in the middle of Shomolu Road just before the bus stop. Buses swerve into the other lane to dodge it, especially when it rains and the hole fills with water.',
                 'category': 'infrastructure',
                 'status': 'in_progress',
                 'scope': 'local',
                 'priority': 'high',
                 'state': 'Lagos',
-                'lga': 'Surulere',
-                'ward': 'Ward 001',
+                'lga': 'Shomolu',
+                'ward': 'Ward 004',
             },
             {
-                'title': 'Uncleared Waste Dump',
-                'description': 'Waste has not been cleared from the dumping site for weeks',
+                'title': 'LAWMA truck has skipped our street for three weeks',
+                'description': 'The PSP truck that serves Allen Avenue side streets in Ikeja has not come for three weeks. Refuse bags are piling at the junction and spilling into the gutter.',
                 'category': 'environment',
                 'status': 'reported',
                 'scope': 'local',
                 'priority': 'medium',
                 'state': 'Lagos',
-                'lga': 'Surulere',
-                'ward': 'Ward 001',
+                'lga': 'Ikeja',
+                'ward': 'Ward 003',
             },
             {
-                'title': 'School Building Renovation Needed',
-                'description': 'The primary school building needs urgent renovation',
+                'title': 'No roof sheets on two classrooms at Community Primary School',
+                'description': 'Two classroom blocks at the community primary school in Eti-Osa lost roof sheets in the last storm. Pupils now crowd into the remaining rooms when it rains.',
                 'category': 'education',
                 'status': 'under_review',
                 'scope': 'local',
                 'priority': 'high',
                 'state': 'Lagos',
-                'lga': 'Surulere',
-                'ward': 'Ward 001',
+                'lga': 'Eti-Osa',
+                'ward': 'Ward 002',
             },
         ]
 
@@ -139,7 +139,7 @@ class Command(BaseCommand):
                         issue=issue,
                         status='reported',
                         updated_by=users[0],
-                        note='Issue reported'
+                        note='Report received and pinned to the ward map.'
                     )
                 elif issue.status == 'under_review':
                     # Create history showing progression
@@ -147,13 +147,13 @@ class Command(BaseCommand):
                         issue=issue,
                         status='reported',
                         updated_by=users[0],
-                        note='Issue reported'
+                        note='Report received and pinned to the ward map.'
                     )
                     StatusHistory.objects.create(
                         issue=issue,
                         status='under_review',
                         updated_by=users[1],
-                        note='Official has reviewed the issue'
+                        note='Seen at the works office. Checking who owns this road.'
                     )
                 elif issue.status == 'in_progress':
                     # Create full status progression
@@ -161,19 +161,19 @@ class Command(BaseCommand):
                         issue=issue,
                         status='reported',
                         updated_by=users[0],
-                        note='Issue reported'
+                        note='Report received and pinned to the ward map.'
                     )
                     StatusHistory.objects.create(
                         issue=issue,
                         status='under_review',
                         updated_by=users[1],
-                        note='Official has reviewed the issue'
+                        note='Seen at the works office. Checking who owns this road.'
                     )
                     StatusHistory.objects.create(
                         issue=issue,
                         status='in_progress',
                         updated_by=users[1],
-                        note='Work has commenced on fixing this issue'
+                        note='Repair crew sent out to assess the damage.'
                     )
 
         self.stdout.write(self.style.SUCCESS('Sample data created successfully!'))

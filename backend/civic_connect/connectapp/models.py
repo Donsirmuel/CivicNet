@@ -13,6 +13,7 @@ class UserProfile(models.Model):
         ('ward', 'Ward'),
         ('lga', 'LGA'),
         ('state', 'State'),
+        ('federal', 'Federal'),
     ]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
@@ -89,6 +90,17 @@ class Issue(models.Model):
 
     image_url = models.URLField(blank=True, null=True)
 
+    ESCALATION_CHOICES = [
+        ('ward', 'Ward'),
+        ('lga', 'LGA'),
+        ('state', 'State'),
+        ('federal', 'Federal'),
+    ]
+    ESCALATION_ORDER = ['ward', 'lga', 'state', 'federal']
+
+    escalation_level = models.CharField(max_length=20, choices=ESCALATION_CHOICES, default='ward')
+    escalated_at = models.DateTimeField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -97,6 +109,64 @@ class Issue(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.status}"
+
+    @property
+    def days_waiting(self):
+        from django.utils import timezone
+        delta = timezone.now().date() - self.created_at.date()
+        return max(delta.days, 1)
+
+    def escalate_one_step(self):
+        """Move escalation_level one step up the ward→lga→state→federal chain."""
+        from django.utils import timezone
+        order = self.ESCALATION_ORDER
+        idx = order.index(self.escalation_level) if self.escalation_level in order else 0
+        if idx < len(order) - 1:
+            self.escalation_level = order[idx + 1]
+        self.escalated_at = timezone.now()
+        self.save(update_fields=['escalation_level', 'escalated_at', 'updated_at'])
+        return self.escalation_level
+
+    @classmethod
+    def auto_escalate(cls, threshold_days=14):
+        """Escalate reported/under_review issues with no official reply older than threshold one step."""
+        from django.utils import timezone
+        from datetime import timedelta
+        cutoff = timezone.now() - timedelta(days=threshold_days)
+        candidates = cls.objects.filter(
+            status__in=['reported', 'under_review'],
+            created_at__lte=cutoff,
+        )
+        escalated = 0
+        for issue in candidates:
+            # Skip issues that already received an official reply
+            # (a StatusHistory row written by a verified official or staff).
+            histories = issue.status_history.select_related('updated_by__profile').all()
+            has_official_reply = False
+            for h in histories:
+                updater = h.updated_by
+                if updater is None:
+                    continue
+                if updater.is_staff:
+                    has_official_reply = True
+                    break
+                profile = getattr(updater, 'profile', None)
+                if profile and profile.role == 'official' and profile.is_verified:
+                    has_official_reply = True
+                    break
+            if has_official_reply:
+                continue
+            if issue.status in ('resolved', 'closed'):
+                continue
+            issue.escalate_one_step()
+            StatusHistory.objects.create(
+                issue=issue,
+                status=issue.status,
+                updated_by=None,
+                note=f"Escalated to {issue.escalation_level}",
+            )
+            escalated += 1
+        return escalated
 
 
 # Status History Model - for tracking issue status changes
@@ -130,6 +200,7 @@ class OfficialJurisdiction(models.Model):
         ('ward', 'Ward'),
         ('lga', 'LGA'),
         ('state', 'State'),
+        ('federal', 'Federal'),
     ]
 
     official = models.OneToOneField(User, on_delete=models.CASCADE, related_name='jurisdiction')
@@ -247,6 +318,38 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"Notification for {self.user.username} - {self.notification_type}"
+
+
+# Verification Request Model - officials request verification from staff
+class VerificationRequest(models.Model):
+    JURISDICTION_CHOICES = [
+        ('ward', 'Ward'),
+        ('lga', 'LGA'),
+        ('state', 'State'),
+    ]
+
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='verification_requests')
+    office_name = models.CharField(max_length=255)
+    jurisdiction = models.CharField(max_length=20, choices=JURISDICTION_CHOICES, default='ward')
+    state = models.CharField(max_length=100, blank=True, null=True)
+    lga = models.CharField(max_length=100, blank=True, null=True)
+    ward = models.CharField(max_length=100, blank=True, null=True)
+    document_url = models.URLField(blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.office_name} ({self.status})"
 
 
 # Saved/Bookmarked Items Model

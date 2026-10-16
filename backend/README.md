@@ -94,7 +94,7 @@ python manage.py populate_sample_data
 
 This creates 3 sample users:
 - **chinedu_citizen** (citizen) - password: password123
-- **jane_official** (government official) - password: password123
+- **funmi_works** (verified works official) - password: password123
 - **ahmed_resident** (citizen) - password: password123
 
 ### 5. Run Development Server

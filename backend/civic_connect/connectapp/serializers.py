@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import UserProfile, Issue, Post, Comment, Message, Notification, BookmarkedItem, StatusHistory, OfficialJurisdiction
+from .models import UserProfile, Issue, Post, Comment, Message, Notification, BookmarkedItem, StatusHistory, OfficialJurisdiction, VerificationRequest
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -58,8 +58,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserProfile
-        fields = ['id', 'user', 'bio', 'avatar_url', 'location', 'role', 'is_verified', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        fields = ['id', 'user', 'bio', 'avatar_url', 'location', 'role', 'is_verified',
+                  'state', 'lga', 'ward', 'jurisdiction_type',
+                  'created_at', 'updated_at']
+        # role / is_verified are granted by staff through the verification
+        # flow, never by the account owner.
+        read_only_fields = ['id', 'created_at', 'updated_at', 'role', 'is_verified']
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -77,11 +81,40 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ['id', 'content', 'author', 'likes', 'parent', 'post_id', 'issue_id', 'replies', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'created_at', 'updated_at', 'author']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'author', 'likes']
+
+    def validate(self, attrs):
+        post = attrs.get('post', getattr(self.instance, 'post', None))
+        issue = attrs.get('issue', getattr(self.instance, 'issue', None))
+        if bool(post) == bool(issue):
+            raise serializers.ValidationError(
+                'A comment must belong to exactly one post or one issue.'
+            )
+        parent = attrs.get('parent', getattr(self.instance, 'parent', None))
+        if parent is not None:
+            if parent.pk == getattr(self.instance, 'pk', None):
+                raise serializers.ValidationError('A comment cannot reply to itself.')
+            if (parent.post_id, parent.issue_id) != (
+                post.pk if post else None,
+                issue.pk if issue else None,
+            ):
+                raise serializers.ValidationError(
+                    'A reply must belong to the same post or issue as its parent.'
+                )
+        content = attrs.get('content', '')
+        if isinstance(content, str) and len(content) > 2000:
+            raise serializers.ValidationError(
+                {'content': 'Keep comments under 2000 characters.'}
+            )
+        return attrs
 
     def get_replies(self, obj):
+        depth = self.context.get('comment_depth', 0)
+        if depth >= 2:
+            return []
         if obj.replies.all().exists():
-            return CommentSerializer(obj.replies.all(), many=True).data
+            context = {**self.context, 'comment_depth': depth + 1}
+            return CommentSerializer(obj.replies.all(), many=True, context=context).data
         return []
 
 
@@ -101,7 +134,7 @@ class PostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = ['id', 'content', 'author', 'likes', 'comments', 'shares', 'image_url', 'is_pinned', 'comments_list', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'created_at', 'updated_at', 'author', 'likes', 'comments', 'shares']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'author', 'likes', 'comments', 'shares', 'is_pinned']
 
 
 class IssueSerializer(serializers.ModelSerializer):
@@ -109,11 +142,14 @@ class IssueSerializer(serializers.ModelSerializer):
     assigned_to = UserSerializer(read_only=True)
     comments_list = CommentSerializer(many=True, read_only=True)
     status_history = StatusHistorySerializer(many=True, read_only=True)
+    days_waiting = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Issue
-        fields = ['id', 'title', 'description', 'category', 'status', 'scope', 'priority', 'state', 'lga', 'ward', 'created_by', 'assigned_to', 'upvotes', 'downvotes', 'comment_count', 'image_url', 'comments_list', 'status_history', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'created_at', 'updated_at', 'created_by', 'upvotes', 'downvotes', 'comment_count', 'status_history']
+        fields = ['id', 'title', 'description', 'category', 'status', 'scope', 'priority', 'state', 'lga', 'ward', 'created_by', 'assigned_to', 'upvotes', 'downvotes', 'comment_count', 'image_url', 'comments_list', 'status_history', 'escalation_level', 'escalated_at', 'days_waiting', 'created_at', 'updated_at']
+        # status moves through update_status (writes history + notifies);
+        # assignment moves through assign / assign_to_me.
+        read_only_fields = ['id', 'created_at', 'updated_at', 'created_by', 'status', 'assigned_to', 'upvotes', 'downvotes', 'comment_count', 'status_history', 'escalation_level', 'escalated_at', 'days_waiting']
 
 
 class MessageSerializer(serializers.ModelSerializer):
@@ -128,15 +164,35 @@ class MessageSerializer(serializers.ModelSerializer):
         fields = ['id', 'sender', 'receiver', 'receiver_id', 'content', 'is_read', 'created_at']
         read_only_fields = ['id', 'created_at', 'sender']
 
+    def validate_content(self, value):
+        text = (value or '').strip()
+        if not text:
+            raise serializers.ValidationError('Message cannot be empty.')
+        if len(text) > 2000:
+            raise serializers.ValidationError('Keep messages under 2000 characters.')
+        return text
+
+    def validate(self, attrs):
+        if self.instance is not None and 'receiver' in attrs:
+            raise serializers.ValidationError(
+                {'receiver_id': 'The receiver cannot be changed after sending.'}
+            )
+        return attrs
+
 
 class NotificationSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     actor = UserSerializer(read_only=True)
+    actor_role = serializers.SerializerMethodField()
 
     class Meta:
         model = Notification
-        fields = ['id', 'user', 'notification_type', 'title', 'message', 'actor', 'post', 'issue', 'is_read', 'created_at']
+        fields = ['id', 'user', 'notification_type', 'title', 'message', 'actor', 'actor_role', 'post', 'issue', 'is_read', 'created_at']
         read_only_fields = ['id', 'created_at', 'user']
+
+    def get_actor_role(self, obj):
+        profile = getattr(getattr(obj, 'actor', None), 'profile', None)
+        return getattr(profile, 'role', None)
 
 
 class BookmarkedItemSerializer(serializers.ModelSerializer):
@@ -153,3 +209,13 @@ class OfficialJurisdictionSerializer(serializers.ModelSerializer):
         model = OfficialJurisdiction
         fields = ['id', 'official', 'state', 'lga', 'ward', 'jurisdiction_level', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class VerificationRequestSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
+    class Meta:
+        model = VerificationRequest
+        fields = ['id', 'user', 'office_name', 'jurisdiction', 'state', 'lga', 'ward', 'document_url', 'status', 'created_at']
+        # status changes only through the staff-only review action.
+        read_only_fields = ['id', 'created_at', 'user', 'status']
