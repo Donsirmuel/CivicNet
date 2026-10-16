@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Icon, Input } from '../components/common';
 import PostCard, { type Post } from '../components/issues/PostCard';
 import StandardLayout from '../layouts/StandardLayout';
-import { postsService, profilesService, usersService } from '../services';
+import { issuesService, postsService, profilesService, usersService } from '../services';
 import { convertBackendPostToPost } from '../utils/dataMappers';
 import type { User } from '../types';
 
@@ -21,6 +21,20 @@ interface UserProfileDisplay extends Partial<User> {
   created_at?: string;
 }
 
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return 'C';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+function formatJoinedMonthYear(dateJoined?: string): string {
+  if (!dateJoined) return 'Recently';
+  const d = new Date(dateJoined);
+  if (Number.isNaN(d.getTime())) return 'Recently';
+  return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
 export default function ProfilePage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
@@ -28,10 +42,13 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<UserProfileDisplay | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [ownIssues, setOwnIssues] = useState<{ status: string }[]>([]);
+  const [retryKey, setRetryKey] = useState(0);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [hasUploadedAvatar, setHasUploadedAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editFormData, setEditFormData] = useState({
     firstName: '',
@@ -48,16 +65,24 @@ export default function ProfilePage() {
 
         const userData = await usersService.getCurrentUser();
         const fetchedPosts = await postsService.getPosts({ ordering: '-created_at' }).catch(() => []);
+        const fetchedIssues = await issuesService.getIssues({ ordering: '-created_at' }).catch(() => []);
         const convertedPosts = fetchedPosts.map(convertBackendPostToPost);
         const authoredPosts = convertedPosts.filter(
           (post) =>
             post.author.username === userData.username ||
             post.author.name === `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
         );
+        const reporterIssues = fetchedIssues.filter(
+          (issue) =>
+            issue.created_by?.id === userData.id ||
+            issue.created_by?.username === userData.username,
+        );
 
         setUser(userData as UserProfileDisplay);
         setPosts(authoredPosts);
-        setAvatarPreview((userData as UserProfileDisplay).avatar || (userData as UserProfileDisplay).profile_picture || null);
+        setOwnIssues(reporterIssues);
+        setAvatarPreview(null);
+        setHasUploadedAvatar(false);
         setEditFormData({
           firstName: userData.first_name || '',
           lastName: userData.last_name || '',
@@ -73,12 +98,22 @@ export default function ProfilePage() {
     };
 
     fetchUserData();
-  }, []);
+  }, [retryKey]);
 
   const profileName =
     user?.first_name && user?.last_name
       ? `${user.first_name} ${user.last_name}`
       : user?.full_name || user?.name || 'Citizen';
+
+  const initials = getInitials(profileName);
+  const locationText = user?.location || 'Nigeria';
+  const joinedText = formatJoinedMonthYear(user?.date_joined);
+
+  const issuesRaised = ownIssues.length;
+  const answered = ownIssues.filter(
+    (issue) => issue.status === 'resolved' || issue.status === 'closed',
+  ).length;
+  const supportGiven = posts.reduce((sum, post) => sum + post.stats.likes, 0);
 
   const handleAvatarSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -87,6 +122,7 @@ export default function ProfilePage() {
     const reader = new FileReader();
     reader.onload = (loadEvent) => {
       setAvatarPreview(loadEvent.target?.result as string);
+      setHasUploadedAvatar(true);
     };
     reader.readAsDataURL(file);
   };
@@ -117,8 +153,6 @@ export default function ProfilePage() {
         ...updatedCoreUser,
         bio: trimmedBio,
         location: trimmedLocation,
-        avatar: avatarPreview || (updatedCoreUser as UserProfileDisplay).avatar,
-        profile_picture: avatarPreview || (updatedCoreUser as UserProfileDisplay).profile_picture,
       } as UserProfileDisplay;
 
       usersService.setCurrentUser(mergedUser as User);
@@ -187,8 +221,15 @@ export default function ProfilePage() {
       <StandardLayout showRightSidebar={false}>
         <div className="flex min-h-[60vh] flex-col items-center justify-center py-16">
           <Icon name="error" className="mb-4 text-6xl text-[var(--civic-danger)]" />
-          <h2 className="text-xl font-bold tracking-[-0.01em] text-[var(--civic-text)]">Error Loading Profile</h2>
+          <h2 className="text-xl font-bold tracking-[-0.01em] text-[var(--civic-text)]">Could not load this profile</h2>
           <p className="mt-2 text-[var(--civic-muted)]">{error || 'Profile not found'}</p>
+          <button
+            type="button"
+            onClick={() => setRetryKey((key) => key + 1)}
+            className="mt-5 rounded-full bg-[var(--civic-primary)] px-6 py-2.5 text-sm font-bold text-white transition hover:brightness-110"
+          >
+            Try again
+          </button>
         </div>
       </StandardLayout>
     );
@@ -200,13 +241,13 @@ export default function ProfilePage() {
     { id: 'media', label: 'Media' },
   ];
 
+  const showUploadedAvatar = hasUploadedAvatar && !!avatarPreview;
+
   return (
     <StandardLayout showRightSidebar={false}>
       {isEditModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(22,33,51,0.28)] px-4 backdrop-blur-sm">
-          <div
-            className="max-h-[92vh] w-full max-w-lg overflow-hidden rounded-[28px] border border-[var(--civic-border)] bg-[var(--civic-surface)] shadow-[0_30px_80px_-30px_rgba(0,0,0,0.45)]"
-          >
+          <div className="max-h-[92vh] w-full max-w-lg overflow-hidden rounded-[28px] border border-[var(--civic-border)] bg-[var(--civic-surface)] shadow-[0_30px_80px_-30px_rgba(0,0,0,0.45)]">
             <div className="flex items-center justify-between border-b px-6 py-5" style={{ borderColor: 'var(--civic-border)' }}>
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-[var(--civic-muted)]">Profile settings</p>
@@ -219,31 +260,37 @@ export default function ProfilePage() {
 
             <div className="space-y-5 overflow-y-auto px-6 py-6">
               <div className="flex items-center gap-4">
-                <img
-                  src={
-                    avatarPreview ||
-                    user.avatar ||
-                    user.profile_picture ||
-                    'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop'
-                  }
-                  alt="Avatar preview"
-                  className="size-20 rounded-2xl object-cover"
-                />
+                {showUploadedAvatar ? (
+                  <img
+                    src={avatarPreview as string}
+                    alt="Avatar preview"
+                    className="size-20 rounded-full object-cover"
+                  />
+                ) : (
+                  <div
+                    className="flex size-20 items-center justify-center rounded-full font-display text-2xl text-white"
+                    style={{ background: '#a87b5a' }}
+                  >
+                    {getInitials(
+                      `${editFormData.firstName} ${editFormData.lastName}`.trim() || profileName,
+                    )}
+                  </div>
+                )}
                 <div>
                   <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarSelect} className="hidden" />
                   <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-                    Upload Photo
+                    Upload photo
                   </Button>
                 </div>
               </div>
 
               <Input
-                label="First Name"
+                label="First name"
                 value={editFormData.firstName}
                 onChange={(event) => setEditFormData({ ...editFormData, firstName: event.target.value })}
               />
               <Input
-                label="Last Name"
+                label="Last name"
                 value={editFormData.lastName}
                 onChange={(event) => setEditFormData({ ...editFormData, lastName: event.target.value })}
               />
@@ -286,193 +333,186 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, var(--civic-surface-soft) 0%, var(--civic-bg) 100%)' }}>
-        <div className="mx-auto max-w-[1400px] px-4 py-6 lg:px-8 lg:py-8">
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-            <section className="overflow-hidden rounded-[32px] border border-[var(--civic-border)] bg-[var(--civic-surface)] shadow-[0_30px_70px_-36px_rgba(0,0,0,0.35)]">
-              <div className="relative h-48 overflow-hidden border-b border-[var(--civic-border)] lg:h-56">
-                <img
-                  src={
-                    user.banner ||
-                    user.cover_image ||
-                    'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1400&h=500&fit=crop'
-                  }
-                  alt="Citizen banner"
-                  className="h-full w-full object-cover opacity-60"
-                />
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(19,32,51,0.1)_0%,rgba(19,32,51,0.34)_100%)]" />
-                <div className="absolute inset-0 bg-pattern opacity-20" />
-              </div>
-
-              <div className="flex flex-col gap-7 p-5 lg:p-7">
-                <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-                    <img
-                      src={
-                        avatarPreview ||
-                        user.avatar ||
-                        user.profile_picture ||
-                        'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop'
-                      }
-                      alt={profileName}
-                      className="size-32 rounded-[28px] object-cover ring-4 ring-[var(--civic-surface)]"
-                    />
-
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--civic-muted)]">
-                        Citizen profile
-                      </p>
-                      <div className="mt-2 flex flex-wrap items-center gap-3">
-                        <h1 className="break-words font-display text-4xl tracking-[-0.02em] text-[var(--civic-text)] lg:text-5xl">
-                          {profileName}
-                        </h1>
-                        <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(10,106,59,0.12)] px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-primary)]">
-                          <Icon name="person" className="text-base" />
-                          Citizen
-                        </span>
-                      </div>
-                      <p className="mt-2 text-lg font-bold text-[var(--civic-primary)]">
-                        @{user.username || 'citizen'}
-                      </p>
-                      <p className="mt-4 max-w-2xl text-[15px] leading-7 text-[var(--civic-muted)]">
-                        {user.bio ||
-                          'Your profile shows the updates and reports you have shared with your community.'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3">
-                    <Button variant="outline" size="sm" icon="edit" onClick={() => setIsEditModalOpen(true)}>
-                      Edit Profile
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                  {[
-                    ['Posts', posts.length, 'feed'],
-                    ['Issues', posts.filter((post) => post.type === 'issue').length, 'flag'],
-                    ['Replies', posts.reduce((sum, post) => sum + post.stats.comments, 0), 'chat_bubble'],
-                    ['Joined', user?.date_joined ? new Date(user.date_joined).toLocaleDateString() : 'Recently joined', 'calendar_month'],
-                  ].map(([label, value, icon]) => (
-                    <div
-                      key={label as string}
-                      className="rounded-[20px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] px-5 py-5"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--civic-muted)]">
-                          {label}
-                        </p>
-                        <Icon name={icon as string} className="text-[18px] text-[var(--civic-primary)]" />
-                      </div>
-                      <p className="mt-3 text-[1rem] font-bold tracking-[-0.01em] text-[var(--civic-text)]">
-                        {value as ReactNode}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="border-t border-[var(--civic-border)] px-6 lg:px-8">
-                <div className="flex gap-8 overflow-x-auto">
-                  {tabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`relative px-1 py-4 text-sm font-bold transition ${
-                        activeTab === tab.id
-                          ? 'text-[var(--civic-text)]'
-                          : 'text-[var(--civic-muted)] hover:text-[var(--civic-text)]'
-                      }`}
-                    >
-                      {tab.label}
-                      {activeTab === tab.id && (
-                        <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--civic-primary)]" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="border-t border-[var(--civic-border)] p-5 lg:p-8">
-                {activeTab === 'posts' && (
-                  <div className="space-y-4">
-                    {posts.length ? (
-                      posts.map((post) => (
-                        <PostCard
-                          key={`${post.type}-${post.id}`}
-                          post={post}
-                          onLike={handleLike}
-                          onComment={handleComment}
-                          onShare={handleShare}
-                          onBookmark={handleBookmark}
-                        />
-                      ))
-                    ) : (
-                      <div className="rounded-[24px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] p-10 text-center">
-                        <Icon name="feed" className="mx-auto mb-4 text-5xl text-[var(--civic-muted)]" />
-                        <p className="text-lg font-bold text-[var(--civic-text)]">No posts yet</p>
-                        <p className="mt-2 text-sm text-[var(--civic-muted)]">
-                          When you post updates or reports, they will show up here.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {activeTab === 'replies' && (
-                  <div className="rounded-[24px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] p-10 text-center">
-                    <Icon name="chat_bubble" className="mx-auto mb-4 text-5xl text-[var(--civic-muted)]" />
-                    <p className="text-lg font-bold text-[var(--civic-text)]">No replies yet</p>
-                    <p className="mt-2 text-sm text-[var(--civic-muted)]">
-                      Replies and follow-ups will show here when they are posted.
-                    </p>
-                  </div>
-                )}
-
-                {activeTab === 'media' && (
-                  <div className="rounded-[24px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] p-10 text-center">
-                    <Icon name="photo_library" className="mx-auto mb-4 text-5xl text-[var(--civic-muted)]" />
-                    <p className="text-lg font-bold text-[var(--civic-text)]">No media yet</p>
-                    <p className="mt-2 text-sm text-[var(--civic-muted)]">
-                      Photos and videos you share will appear here.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </section>
-
-            <aside className="space-y-4 xl:sticky xl:top-[96px] xl:self-start">
-              <section className="rounded-[28px] border border-[var(--civic-border)] bg-[var(--civic-surface)] p-5 shadow-[0_24px_48px_-36px_rgba(22,33,51,0.28)]">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--civic-muted)]">Profile at a glance</p>
-                <div className="mt-4 space-y-3">
-                  <div className="rounded-[20px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] p-4">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Username</p>
-                    <p className="mt-2 text-sm font-bold text-[var(--civic-text)]">@{user.username || 'citizen'}</p>
-                  </div>
-                  <div className="rounded-[20px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] p-4">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Location</p>
-                    <p className="mt-2 text-sm font-bold text-[var(--civic-text)]">{user.location || 'Nigeria'}</p>
-                  </div>
-                  <div className="rounded-[20px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] p-4">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Member since</p>
-                    <p className="mt-2 text-sm font-bold text-[var(--civic-text)]">
-                      {user?.date_joined ? new Date(user.date_joined).toLocaleDateString() : 'Recently joined'}
-                    </p>
-                  </div>
-                </div>
-              </section>
-
-              <section className="rounded-[28px] border border-[var(--civic-border)] bg-[var(--civic-surface)] p-5 shadow-[0_24px_48px_-36px_rgba(22,33,51,0.28)]">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--civic-muted)]">About</p>
-                <p className="mt-3 text-sm leading-7 text-[var(--civic-muted)]">
-                  {user.bio ||
-                    'Your profile shows the updates and reports you have shared with your community.'}
-                </p>
-              </section>
-            </aside>
+      <div className="mx-auto w-full max-w-[1100px] px-4 py-6">
+        <section className="overflow-hidden rounded-[24px] border border-[var(--civic-border)] bg-[var(--civic-surface)]">
+          {/* Banner: CSS shapes only */}
+          <div
+            className="relative h-[180px] w-full overflow-hidden rounded-t-[24px]"
+            style={{ background: 'linear-gradient(135deg,#0e2a1d,#1d5c38)' }}
+          >
+            <div
+              aria-hidden="true"
+              className="absolute rounded-full"
+              style={{
+                width: 220,
+                height: 220,
+                background: '#d4a540',
+                right: -56,
+                bottom: -72,
+              }}
+            />
+            <div
+              aria-hidden="true"
+              className="absolute rounded-full"
+              style={{
+                width: 64,
+                height: 64,
+                background: 'rgba(255,255,255,0.12)',
+                right: 190,
+                bottom: 28,
+              }}
+            />
           </div>
-        </div>
+
+          <div className="px-6 pb-6 pt-6 lg:px-8">
+            {/* Avatar sits fully below the banner — never overlapped */}
+            <div>
+              {showUploadedAvatar ? (
+                <img
+                  src={avatarPreview as string}
+                  alt={profileName}
+                  className="size-[112px] rounded-full object-cover ring-4 ring-white"
+                />
+              ) : (
+                <div
+                  className="flex size-[112px] items-center justify-center rounded-full font-display text-4xl text-white ring-4 ring-white"
+                  style={{ background: '#a87b5a' }}
+                >
+                  {initials}
+                </div>
+              )}
+            </div>
+
+            {/* Name row + Edit profile */}
+            <div className="mt-4 flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <h1 className="font-display text-[40px] leading-none tracking-[-0.01em] text-[var(--civic-text)]">
+                  {profileName}
+                </h1>
+                <p className="mt-2 text-[15px] font-semibold text-[var(--civic-primary)]">
+                  @{user.username || 'citizen'}
+                </p>
+              </div>
+              <button
+                onClick={() => setIsEditModalOpen(true)}
+                className="shrink-0 rounded-full border border-[#1a1a1a] bg-white px-5 py-2 text-sm font-semibold text-[#1a1a1a] transition hover:bg-gray-50"
+              >
+                Edit profile
+              </button>
+            </div>
+
+            {/* Meta line */}
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <span className="inline-flex items-center rounded-full bg-[#e3f2e7] px-3 py-1.5 text-[13px] font-semibold text-[#1d5c38]">
+                Citizen · Verified
+              </span>
+              <span className="text-[14px] text-[var(--civic-muted)]">
+                {locationText} · Joined {joinedText}
+              </span>
+            </div>
+
+            {/* Stat cards */}
+            <div className="mt-6 grid gap-4 sm:grid-cols-3">
+              <div className="rounded-[16px] border border-[var(--civic-border)] bg-white px-5 py-4">
+                <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[var(--civic-muted)]">
+                  Issues raised
+                </p>
+                <p className="mt-2 font-display text-[32px] leading-none text-[var(--civic-text)]">
+                  {issuesRaised}
+                </p>
+              </div>
+              <div className="rounded-[16px] border border-[var(--civic-border)] bg-white px-5 py-4">
+                <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[var(--civic-muted)]">
+                  Answered
+                </p>
+                <p className="mt-2 font-display text-[32px] leading-none text-[var(--civic-text)]">
+                  {answered}
+                </p>
+              </div>
+              <div className="rounded-[16px] border border-[var(--civic-border)] bg-white px-5 py-4">
+                <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[var(--civic-muted)]">
+                  Support given
+                </p>
+                <p className="mt-2 font-display text-[32px] leading-none text-[var(--civic-text)]">
+                  {supportGiven}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <div className="border-t border-[var(--civic-border)] px-6 lg:px-8">
+            <div className="flex gap-8">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`relative px-1 py-4 text-[15px] transition ${
+                    activeTab === tab.id
+                      ? 'font-bold text-black'
+                      : 'font-medium text-[var(--civic-muted)] hover:text-[var(--civic-text)]'
+                  }`}
+                >
+                  {tab.label}
+                  {activeTab === tab.id && (
+                    <span className="absolute bottom-0 left-0 right-0 h-[3px] rounded-full bg-[var(--civic-primary)]" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Tab panels */}
+          <div className="border-t border-[var(--civic-border)] bg-[var(--civic-surface-soft)] p-5 lg:p-8">
+            {activeTab === 'posts' && (
+              <div className="space-y-4">
+                {posts.length ? (
+                  posts.map((post) => (
+                    <PostCard
+                      key={`${post.type}-${post.id}`}
+                      post={post}
+                      onLike={handleLike}
+                      onComment={handleComment}
+                      onShare={handleShare}
+                      onBookmark={handleBookmark}
+                    />
+                  ))
+                ) : (
+                  <div className="rounded-[16px] border border-[var(--civic-border)] bg-white p-10 text-center">
+                    <p className="font-display text-2xl text-[var(--civic-text)]">No posts yet</p>
+                    <p className="mx-auto mt-2 max-w-md text-[14px] text-[var(--civic-muted)]">
+                      When you report an issue or share an update, it shows up here.
+                    </p>
+                    <button
+                      onClick={() => navigate('/feed')}
+                      className="mt-5 rounded-full bg-[var(--civic-primary)] px-6 py-2.5 text-sm font-bold text-white transition hover:brightness-110"
+                    >
+                      Report an issue
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'replies' && (
+              <div className="rounded-[16px] border border-[var(--civic-border)] bg-white p-10 text-center">
+                <p className="font-display text-2xl text-[var(--civic-text)]">No replies yet</p>
+                <p className="mt-2 text-[14px] text-[var(--civic-muted)]">
+                  Replies and follow-ups will show here when they are posted.
+                </p>
+              </div>
+            )}
+
+            {activeTab === 'media' && (
+              <div className="rounded-[16px] border border-[var(--civic-border)] bg-white p-10 text-center">
+                <p className="font-display text-2xl text-[var(--civic-text)]">No media yet</p>
+                <p className="mt-2 text-[14px] text-[var(--civic-muted)]">
+                  Photos and videos you share will appear here.
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
       </div>
     </StandardLayout>
   );

@@ -1,13 +1,12 @@
-import { useMemo, useState } from 'react';
-import { Button, Icon, Input } from '../components/common';
-import { useTheme, type Theme } from '../contexts/ThemeContext';
+import { useEffect, useState } from 'react';
+import { Button, Icon } from '../components/common';
 import StandardLayout from '../layouts/StandardLayout';
+import { usersService } from '../services';
 
 interface SettingsState {
   fullName: string;
-  voterId: string;
+  username: string;
   email: string;
-  theme: Theme;
   biometricAuth: boolean;
   anonymousComments: boolean;
   legislativeAlerts: boolean;
@@ -18,11 +17,9 @@ interface SettingsState {
 }
 
 const defaultSettings: SettingsState = {
-  fullName: 'Amina Yusuf Okonjo',
-  voterId: '90F5 ***** 1102',
-  email: 'amina.okonjo@civicnet.ng',
-  
-  theme: 'system',
+  fullName: '',
+  username: '',
+  email: '',
   biometricAuth: true,
   anonymousComments: false,
   legislativeAlerts: true,
@@ -35,20 +32,25 @@ const defaultSettings: SettingsState = {
 function ToggleSwitch({
   checked,
   onChange,
+  label,
 }: {
   checked: boolean;
   onChange: () => void;
+  label: string;
 }) {
   return (
     <button
       type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
       onClick={onChange}
-      className={`relative inline-flex h-7 w-12 items-center rounded-full transition ${
+      className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--civic-primary)] focus-visible:ring-offset-2 ${
         checked ? 'bg-[var(--civic-primary)]' : 'bg-[var(--civic-border-strong)]'
       }`}
     >
       <span
-        className={`inline-block h-5 w-5 rounded-full bg-white transition ${
+        className={`inline-block h-5 w-5 rounded-full bg-white shadow transition ${
           checked ? 'translate-x-6' : 'translate-x-1'
         }`}
       />
@@ -56,7 +58,13 @@ function ToggleSwitch({
   );
 }
 
-function readSavedSettings() {
+const fieldLabelClass =
+  'mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--civic-muted)]';
+
+const textInputClass =
+  'w-full rounded-xl border border-[var(--civic-border)] bg-white px-4 py-3 text-[15px] text-[var(--civic-text)] placeholder:text-[var(--civic-muted)] outline-none transition focus:border-[var(--civic-primary)] focus:ring-2 focus:ring-[var(--civic-primary-glow)]';
+
+function readSavedSettings(): SettingsState {
   const stored = localStorage.getItem('settings_state');
   if (!stored) return defaultSettings;
 
@@ -68,26 +76,48 @@ function readSavedSettings() {
 }
 
 export default function SettingsPage() {
-  const { theme, setTheme } = useTheme();
   const [saved, setSaved] = useState(false);
-  const [savedState, setSavedState] = useState<SettingsState>(() => ({
-    ...readSavedSettings(),
-    theme,
-  }));
-  const [formData, setFormData] = useState<SettingsState>(() => ({
-    ...readSavedSettings(),
-    theme,
-  }));
+  const [savedState, setSavedState] = useState<SettingsState>(() => readSavedSettings());
+  const [formData, setFormData] = useState<SettingsState>(() => readSavedSettings());
+  const [accountLoading, setAccountLoading] = useState(true);
 
-  const sections = useMemo(
-    () => [
-      { id: 'identity', label: 'Account', caption: 'Name, ID, and email' },
-      { id: 'security', label: 'Privacy', caption: 'Login and comment settings' },
-      { id: 'alerts', label: 'Alerts', caption: 'What you want to hear about' },
-      { id: 'display', label: 'Display', caption: 'Simple app settings' },
-    ],
-    [],
-  );
+  useEffect(() => {
+    let cancelled = false;
+    usersService
+      .getCurrentUser()
+      .then((user) => {
+        if (cancelled) return;
+        const fullName =
+          [user.first_name, user.last_name].filter(Boolean).join(' ').trim() ||
+          user.full_name ||
+          user.name ||
+          '';
+        const patch = {
+          fullName,
+          username: user.username || '',
+          email: user.email || '',
+        };
+        setFormData((current) => ({
+          ...current,
+          fullName: current.fullName || patch.fullName,
+          username: current.username || patch.username,
+          email: current.email || patch.email,
+        }));
+        setSavedState((current) => ({
+          ...current,
+          fullName: current.fullName || patch.fullName,
+          username: current.username || patch.username,
+          email: current.email || patch.email,
+        }));
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setAccountLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const updateField = <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => {
     setFormData((current) => ({ ...current, [key]: value }));
@@ -95,359 +125,254 @@ export default function SettingsPage() {
 
   const handleSave = () => {
     localStorage.setItem('settings_state', JSON.stringify(formData));
-    setTheme(formData.theme);
-    setSavedState(formData);
+    setSavedState({ ...formData });
     setSaved(true);
     window.setTimeout(() => setSaved(false), 2200);
   };
 
   const handleReset = () => {
     setFormData(savedState);
-    setTheme(savedState.theme);
   };
 
-  const scrollToSection = (id: string) => {
-    const section = document.getElementById(id);
-    if (!section) return;
-    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
-  const leftSidebar = (
-    <div className="space-y-5">
-      <div className="civic-section">
-        <p className="civic-label">Settings</p>
-        <h2 className="mt-3 font-display text-2xl tracking-[-0.01em] text-[var(--civic-text)]">Preferences</h2>
-        <p className="mt-3 text-sm leading-6 text-[var(--civic-muted)]">
-          Update your account details, alert choices, and privacy settings.
-        </p>
-      </div>
-
-      <div className="civic-section-soft">
-        <p className="civic-label">Sections</p>
-        <div className="mt-4 space-y-2">
-          {sections.map((section) => (
-            <button
-              key={section.id}
-              onClick={() => scrollToSection(section.id)}
-              className="w-full rounded-md px-4 py-4 text-left transition hover:brightness-[0.99]"
-              style={{ background: 'var(--civic-surface)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}
-            >
-              <p className="text-sm font-bold text-[var(--civic-text)]">{section.label}</p>
-              <p className="mt-2 text-xs leading-5 text-[var(--civic-muted)]">{section.caption}</p>
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+  const alertRows = [
+    {
+      key: 'officialResponses' as const,
+      title: 'Official replies',
+      description: 'Replies and progress updates from verified offices.',
+    },
+    {
+      key: 'civicMentions' as const,
+      title: 'Mentions',
+      description: 'When someone mentions you in a post or comment.',
+    },
+    {
+      key: 'legislativeAlerts' as const,
+      title: 'Policy alerts',
+      description: 'Updates on bills and public discussions.',
+    },
+    {
+      key: 'constituencyUpdates' as const,
+      title: 'Local updates',
+      description: 'News from your local representative.',
+    },
+  ];
 
   return (
-    <StandardLayout leftSidebar={leftSidebar} showLeftSidebar showRightSidebar={false}>
-      <div className="min-h-screen px-4 py-6 lg:px-8 lg:py-8" style={{ background: 'linear-gradient(180deg, var(--civic-surface-soft) 0%, var(--civic-bg) 100%)' }}>
-        <div className="mx-auto max-w-[1400px]">
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-            <section className="civic-section space-y-8">
-              <div className="flex flex-col gap-3 border-b pb-6 sm:flex-row sm:items-end sm:justify-between" style={{ borderColor: 'var(--civic-border)' }}>
+    <StandardLayout showLeftSidebar={false} showRightSidebar={false}>
+      <div className="px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+        <div className="mx-auto max-w-[1100px]">
+          <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h1 className="font-display text-4xl tracking-[-0.02em] text-[var(--civic-text)]">
+                Settings
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--civic-muted)]">
+                Manage your account, privacy, alerts, and display preferences.
+              </p>
+            </div>
+            {saved && (
+              <div
+                className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold text-[var(--civic-primary)]"
+                style={{ background: 'var(--civic-primary-glow)' }}
+              >
+                <Icon name="check_circle" className="text-lg" />
+                Saved
+              </div>
+            )}
+          </header>
+
+          {/* Account */}
+          <section className="grid grid-cols-1 gap-6 border-b border-[var(--civic-border)] py-8 md:grid-cols-[280px_minmax(0,1fr)] md:gap-10 md:py-10">
+            <div>
+              <h2 className="font-display text-2xl tracking-[-0.01em] text-[var(--civic-text)]">
+                Account
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-[var(--civic-muted)]">
+                The details shown on your reports and comments.
+              </p>
+            </div>
+            <div className="space-y-5">
+              <div>
+                <label htmlFor="settings-full-name" className={fieldLabelClass}>
+                  Full name
+                </label>
+                <input
+                  id="settings-full-name"
+                  type="text"
+                  value={accountLoading && !formData.fullName ? 'Loading...' : formData.fullName}
+                  onChange={(event) => updateField('fullName', event.target.value)}
+                  className={textInputClass}
+                  autoComplete="name"
+                />
+              </div>
+              <div>
+                <label htmlFor="settings-username" className={fieldLabelClass}>
+                  Username
+                </label>
+                <input
+                  id="settings-username"
+                  type="text"
+                  value={accountLoading && !formData.username ? 'Loading...' : formData.username}
+                  onChange={(event) => updateField('username', event.target.value)}
+                  className={textInputClass}
+                  autoComplete="username"
+                />
+              </div>
+              <div>
+                <label htmlFor="settings-email" className={fieldLabelClass}>
+                  Email
+                </label>
+                <input
+                  id="settings-email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(event) => updateField('email', event.target.value)}
+                  className={textInputClass}
+                  autoComplete="email"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Privacy */}
+          <section className="grid grid-cols-1 gap-6 border-b border-[var(--civic-border)] py-8 md:grid-cols-[280px_minmax(0,1fr)] md:gap-10 md:py-10">
+            <div>
+              <h2 className="font-display text-2xl tracking-[-0.01em] text-[var(--civic-text)]">
+                Privacy
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-[var(--civic-muted)]">
+                Control who sees your name and how you sign in.
+              </p>
+            </div>
+            <div className="divide-y divide-[var(--civic-border)]">
+              <div className="flex items-center justify-between gap-6 py-5 first:pt-0 last:pb-0">
                 <div>
-                  <p className="civic-label">Your account</p>
-                  <h1 className="mt-3 font-display text-4xl tracking-[-0.02em] text-[var(--civic-text)]">Settings</h1>
-                  <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--civic-muted)]">
-                    Change your details, choose what you want to receive, and save how the app works for you.
+                  <p className="text-[15px] font-semibold text-[var(--civic-text)]">
+                    Hide my name in comments
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-[var(--civic-muted)]">
+                    Your name stays hidden in public comments. Your account stays verified.
                   </p>
                 </div>
-                {saved && (
-                  <div className="inline-flex items-center gap-2 rounded-md px-4 py-3 text-sm font-bold text-[var(--civic-primary)]" style={{ background: 'var(--civic-primary-glow)' }}>
-                    <Icon name="check_circle" className="text-lg" />
-                    Saved
-                  </div>
-                )}
+                <ToggleSwitch
+                  label="Hide my name in comments"
+                  checked={formData.anonymousComments}
+                  onChange={() => updateField('anonymousComments', !formData.anonymousComments)}
+                />
               </div>
-
-              <div className="border-b py-4 lg:hidden" style={{ borderColor: 'var(--civic-border)' }}>
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  {sections.map((section) => (
-                    <button
-                      key={section.id}
-                      onClick={() => scrollToSection(section.id)}
-                      className="shrink-0 rounded-full px-4 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]"
-                      style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}
-                    >
-                      {section.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div className="rounded-[20px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] px-5 py-5">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--civic-muted)]">Theme</p>
-                  <p className="mt-2 text-base font-bold tracking-[-0.01em] text-[var(--civic-text)] capitalize">{formData.theme}</p>
-                </div>
-                <div className="rounded-[20px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] px-5 py-5">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--civic-muted)]">Alerts</p>
-                  <p className="mt-2 text-base font-bold tracking-[-0.01em] text-[var(--civic-text)]">
-                    {formData.officialResponses || formData.civicMentions || formData.legislativeAlerts || formData.constituencyUpdates
-                      ? 'On'
-                      : 'Off'}
+              <div className="flex items-center justify-between gap-6 py-5 first:pt-0 last:pb-0">
+                <div>
+                  <p className="text-[15px] font-semibold text-[var(--civic-text)]">
+                    Biometric login
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-[var(--civic-muted)]">
+                    Ask for fingerprint or face ID before sensitive actions.
                   </p>
                 </div>
-                <div className="rounded-[20px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] px-5 py-5">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--civic-muted)]">Privacy</p>
-                  <p className="mt-2 text-base font-bold tracking-[-0.01em] text-[var(--civic-text)]">
-                    {formData.biometricAuth ? 'Protected' : 'Standard'}
-                  </p>
-                </div>
+                <ToggleSwitch
+                  label="Biometric login"
+                  checked={formData.biometricAuth}
+                  onChange={() => updateField('biometricAuth', !formData.biometricAuth)}
+                />
               </div>
+            </div>
+          </section>
 
-              <div className="grid gap-8 pt-2">
-                <section id="identity" className="space-y-5">
-                <div className="border-b pb-4" style={{ borderColor: 'var(--civic-border)' }}>
-                  <p className="civic-label">Account</p>
-                  <h2 className="mt-3 font-display text-2xl tracking-[-0.01em] text-[var(--civic-text)]">Account details</h2>
-                </div>
-
-              <div className="grid gap-5 lg:grid-cols-2">
-                <div className="rounded-md p-5" style={{ background: 'var(--civic-surface-soft)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}>
-                  <div className="space-y-5">
-                    <Input
-                      label="Full Name"
-                      value={formData.fullName}
-                      onChange={(event) => updateField('fullName', event.target.value)}
-                    />
-
+          {/* Alerts */}
+          <section className="grid grid-cols-1 gap-6 border-b border-[var(--civic-border)] py-8 md:grid-cols-[280px_minmax(0,1fr)] md:gap-10 md:py-10">
+            <div>
+              <h2 className="font-display text-2xl tracking-[-0.01em] text-[var(--civic-text)]">
+                Alerts
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-[var(--civic-muted)]">
+                Choose what you want to hear about.
+              </p>
+            </div>
+            <div>
+              <div className="divide-y divide-[var(--civic-border)]">
+                {alertRows.map((item) => (
+                  <div
+                    key={item.key}
+                    className="flex items-center justify-between gap-6 py-5 first:pt-0"
+                  >
                     <div>
-                      <label className="mb-3 block text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--civic-muted)]">
-                        Voter ID
-                      </label>
-                      <Input
-                        label=""
-                        value={formData.voterId}
-                        onChange={(event) => updateField('voterId', event.target.value)}
-                      />
-                    </div>
-
-                    <Input
-                      label="Email"
-                      value={formData.email}
-                      onChange={(event) => updateField('email', event.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="rounded-md p-5" style={{ background: 'var(--civic-surface-soft)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--civic-muted)]">Profile</p>
-                  <div className="mt-5 space-y-4 text-sm leading-6 text-[var(--civic-muted)]">
-                    <div className="rounded-md px-4 py-4" style={{ background: 'var(--civic-surface)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}>
-                      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]">
-                        Status
+                      <p className="text-[15px] font-semibold text-[var(--civic-text)]">
+                        {item.title}
                       </p>
-                      <p className="mt-2 text-base font-bold text-[var(--civic-text)]">Verified account</p>
-                    </div>
-                    <p>
-                      These details are used when you post, comment, or send a report.
-                    </p>
-                  </div>
-                </div>
-              </div>
-                </section>
-
-                <section id="security" className="space-y-5">
-                <div className="border-b pb-4" style={{ borderColor: 'var(--civic-border)' }}>
-                  <p className="civic-label">Privacy</p>
-                  <h2 className="mt-3 font-display text-2xl tracking-[-0.01em] text-[var(--civic-text)]">Privacy and access</h2>
-                </div>
-
-              <div className="grid gap-5 lg:grid-cols-2">
-                <div className="rounded-md p-5" style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-bold text-[var(--civic-text)]">Biometric login</p>
-                      <p className="mt-2 text-sm leading-6 text-[var(--civic-muted)]">
-                        Ask for fingerprint or face ID on sensitive actions.
-                      </p>
-                    </div>
-                    <ToggleSwitch checked={formData.biometricAuth} onChange={() => updateField('biometricAuth', !formData.biometricAuth)} />
-                  </div>
-                </div>
-
-                <div className="rounded-md p-5" style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-bold text-[var(--civic-text)]">Hide my name in comments</p>
-                      <p className="mt-2 text-sm leading-6 text-[var(--civic-muted)]">
-                        Keep your name hidden in public comments while your account stays verified.
+                      <p className="mt-1 text-sm leading-6 text-[var(--civic-muted)]">
+                        {item.description}
                       </p>
                     </div>
                     <ToggleSwitch
-                      checked={formData.anonymousComments}
-                      onChange={() => updateField('anonymousComments', !formData.anonymousComments)}
+                      label={item.title}
+                      checked={formData[item.key]}
+                      onChange={() => updateField(item.key, !formData[item.key])}
                     />
-                  </div>
-                </div>
-              </div>
-                </section>
-
-                <section id="alerts" className="space-y-5">
-                <div className="border-b pb-4" style={{ borderColor: 'var(--civic-border)' }}>
-                  <p className="civic-label">Alerts</p>
-                  <h2 className="mt-3 font-display text-2xl tracking-[-0.01em] text-[var(--civic-text)]">What you want to receive</h2>
-                </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                {[
-                  {
-                    key: 'legislativeAlerts' as const,
-                    title: 'Policy alerts',
-                    description: 'Updates on bills and public discussions.',
-                  },
-                  {
-                    key: 'constituencyUpdates' as const,
-                    title: 'Local updates',
-                    description: 'News from your local representative.',
-                  },
-                  {
-                    key: 'civicMentions' as const,
-                    title: 'Mentions',
-                    description: 'When someone mentions you in a post or comment.',
-                  },
-                  {
-                    key: 'officialResponses' as const,
-                    title: 'Official replies',
-                    description: 'Replies and progress updates from verified offices.',
-                  },
-                ].map((item) => (
-                  <div key={item.key} className="rounded-md p-5" style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}>
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-sm font-bold text-[var(--civic-text)]">{item.title}</p>
-                        <p className="mt-2 text-sm leading-6 text-[var(--civic-muted)]">{item.description}</p>
-                      </div>
-                      <ToggleSwitch
-                        checked={formData[item.key]}
-                        onChange={() => updateField(item.key, !formData[item.key])}
-                      />
-                    </div>
                   </div>
                 ))}
               </div>
-
-              <div className="rounded-md p-5" style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}>
-                <label className="mb-3 block text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--civic-muted)]">
+              <div className="pt-5">
+                <label htmlFor="settings-email-digest" className={fieldLabelClass}>
                   Email summary
                 </label>
                 <select
+                  id="settings-email-digest"
                   value={formData.emailDigest}
-                  onChange={(event) => updateField('emailDigest', event.target.value as SettingsState['emailDigest'])}
-                  className="min-h-11 w-full rounded-md px-4 text-sm text-[var(--civic-text)] outline-none"
-                  style={{ background: 'var(--civic-surface)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}
+                  onChange={(event) =>
+                    updateField('emailDigest', event.target.value as SettingsState['emailDigest'])
+                  }
+                  className={`${textInputClass} w-full max-w-xs cursor-pointer`}
                 >
                   <option value="off">Off</option>
                   <option value="daily">Daily</option>
                   <option value="weekly">Weekly</option>
                 </select>
               </div>
-                </section>
+            </div>
+          </section>
 
-                <section id="display" className="space-y-5">
-                <div className="border-b pb-4" style={{ borderColor: 'var(--civic-border)' }}>
-                  <p className="civic-label">Display</p>
-                  <h2 className="mt-3 font-display text-2xl tracking-[-0.01em] text-[var(--civic-text)]">App appearance</h2>
+          {/* Display */}
+          <section className="grid grid-cols-1 gap-6 border-b border-[var(--civic-border)] py-8 md:grid-cols-[280px_minmax(0,1fr)] md:gap-10 md:py-10">
+            <div>
+              <h2 className="font-display text-2xl tracking-[-0.01em] text-[var(--civic-text)]">
+                Display
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-[var(--civic-muted)]">
+                How the app looks on your screen.
+              </p>
+            </div>
+            <div className="rounded-xl border border-[var(--civic-border)] bg-white p-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                <span className="flex shrink-0 gap-1.5" aria-hidden="true">
+                  <span
+                    className="h-8 w-8 rounded-full border border-black/10"
+                    style={{ background: '#fbf7f0' }}
+                  />
+                  <span className="h-8 w-8 rounded-full" style={{ background: '#0e2a1d' }} />
+                  <span className="h-8 w-8 rounded-full" style={{ background: '#0a6a3b' }} />
+                  <span className="h-8 w-8 rounded-full" style={{ background: '#d4a540' }} />
+                </span>
+                <div>
+                  <p className="text-[15px] font-semibold text-[var(--civic-text)]">
+                    Sovereign Paper — single palette
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-[var(--civic-muted)]">
+                    Warm paper for sunlight readability, deep forest bands for focus, gold for
+                    action. No mode to manage.
+                  </p>
                 </div>
-
-              <div className="grid gap-4 md:grid-cols-3">
-                {[
-                  {
-                    id: 'system' as Theme,
-                    title: 'Use system',
-                    description: 'Follow your device preference automatically.',
-                    icon: 'devices',
-                  },
-                  {
-                    id: 'light' as Theme,
-                    title: 'Standard light',
-                    description: 'A clean bright view for everyday use.',
-                    icon: 'light_mode',
-                  },
-                  {
-                    id: 'dark' as Theme,
-                    title: 'Sovereign dark',
-                    description: 'A deeper high-contrast view with stronger focus.',
-                    icon: 'dark_mode',
-                  },
-                ].map((option) => {
-                  const active = formData.theme === option.id;
-                  return (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => {
-                        updateField('theme', option.id);
-                        setTheme(option.id);
-                      }}
-                      className="p-6 text-left transition"
-                      style={{
-                        background: active ? 'var(--civic-surface-strong)' : 'var(--civic-surface-soft)',
-                        boxShadow: active
-                          ? 'inset 0 0 0 1px rgba(10,106,59,0.24)'
-                          : 'inset 0 0 0 1px var(--civic-border)',
-                        color: active ? 'var(--civic-text)' : 'var(--civic-text)',
-                      }}
-                    >
-                      <div
-                        className="flex size-11 items-center justify-center rounded-full"
-                        style={{
-                          background: active ? 'var(--civic-primary-glow)' : 'var(--civic-surface)',
-                          color: active ? 'var(--civic-primary)' : 'var(--civic-muted)',
-                        }}
-                      >
-                        <Icon name={option.icon} className="text-xl" />
-                      </div>
-                      <p className="mt-5 text-sm font-bold">{option.title}</p>
-                      <p className="mt-2 text-sm leading-6 text-[var(--civic-muted)]">{option.description}</p>
-                    </button>
-                  );
-                })}
               </div>
-                </section>
+            </div>
+          </section>
 
-                <section className="flex flex-col gap-3 border-t pt-6 sm:flex-row sm:justify-end" style={{ borderColor: 'var(--civic-border)' }}>
-                  <Button variant="outline" onClick={handleReset}>
-                    Reset Changes
-                  </Button>
-                  <Button variant="primary" onClick={handleSave}>
-                    Save Changes
-                  </Button>
-                </section>
-              </div>
-            </section>
-
-            <aside className="space-y-4 xl:sticky xl:top-[96px] xl:self-start">
-              <section className="rounded-[28px] border border-[var(--civic-border)] bg-[var(--civic-surface)] p-5 shadow-[0_24px_48px_-36px_rgba(22,33,51,0.28)]">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--civic-muted)]">Current setup</p>
-                <div className="mt-4 space-y-3">
-                  <div className="rounded-[20px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] p-4">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Name</p>
-                    <p className="mt-2 text-sm font-bold text-[var(--civic-text)]">{formData.fullName}</p>
-                  </div>
-                  <div className="rounded-[20px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] p-4">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Email</p>
-                    <p className="mt-2 text-sm font-bold text-[var(--civic-text)] break-words">{formData.email}</p>
-                  </div>
-                  <div className="rounded-[20px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] p-4">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-muted)]">Digest</p>
-                    <p className="mt-2 text-sm font-bold text-[var(--civic-text)] capitalize">{formData.emailDigest}</p>
-                  </div>
-                </div>
-              </section>
-
-              <section className="rounded-[28px] border border-[var(--civic-border)] bg-[var(--civic-surface)] p-5 shadow-[0_24px_48px_-36px_rgba(22,33,51,0.28)]">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--civic-muted)]">Note</p>
-                <p className="mt-3 text-sm leading-7 text-[var(--civic-muted)]">
-                  Your changes stay local until you save them, so you can tune the experience before committing.
-                </p>
-              </section>
-            </aside>
-          </div>
+          <footer className="flex flex-col gap-3 pt-8 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={handleReset}>
+              Reset changes
+            </Button>
+            <Button variant="primary" onClick={handleSave}>
+              Save changes
+            </Button>
+          </footer>
         </div>
       </div>
     </StandardLayout>

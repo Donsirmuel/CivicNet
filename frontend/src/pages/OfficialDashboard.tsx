@@ -11,8 +11,8 @@ type CategoryFilter = 'all' | IssueCategory;
 
 const statusConfig: Record<IssueStatus, { label: string; icon: string; color: string }> = {
   reported: { label: 'Reported', icon: 'flag', color: 'bg-amber-100 text-amber-700 border-amber-300' },
-  under_review: { label: 'Under Review', icon: 'visibility', color: 'bg-blue-100 text-blue-700 border-blue-300' },
-  in_progress: { label: 'In Progress', icon: 'autorenew', color: 'bg-indigo-100 text-indigo-700 border-indigo-300' },
+  under_review: { label: 'Under review', icon: 'visibility', color: 'bg-blue-100 text-blue-700 border-blue-300' },
+  in_progress: { label: 'In progress', icon: 'autorenew', color: 'bg-indigo-100 text-indigo-700 border-indigo-300' },
   resolved: { label: 'Resolved', icon: 'check_circle', color: 'bg-green-100 text-green-700 border-green-300' },
   closed: { label: 'Closed', icon: 'cancel', color: 'bg-slate-100 text-slate-600 border-slate-300' },
 };
@@ -35,24 +35,41 @@ export default function OfficialDashboard() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
   const [issues, setIssues] = useState<Post[]>([]);
+  const [takingId, setTakingId] = useState<string | null>(null);
+  const [takeError, setTakeError] = useState<string | null>(null);
+
+  const fetchDashboard = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const dashboardIssues = await issuesService.getDashboardIssues();
+      setIssues(dashboardIssues.map(convertIssueToPost));
+    } catch (err) {
+      setError('We could not open the dashboard. Refresh and try again.');
+      console.error('Error fetching dashboard:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const dashboardIssues = await issuesService.getDashboardIssues();
-        setIssues(dashboardIssues.map(convertIssueToPost));
-      } catch (err) {
-        setError('Failed to load dashboard. Please refresh.');
-        console.error('Error fetching dashboard:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchDashboard();
   }, []);
+
+  const handleTakeIssue = async (issueId: string) => {
+    if (takingId) return;
+    try {
+      setTakingId(issueId);
+      setTakeError(null);
+      await issuesService.assignIssueToMe(parseInt(issueId, 10));
+      await fetchDashboard();
+    } catch (err) {
+      setTakeError('Could not assign this report to you. Try again.');
+      console.error('Error taking issue:', err);
+    } finally {
+      setTakingId(null);
+    }
+  };
 
   const stats = useMemo(
     () => ({
@@ -77,10 +94,10 @@ export default function OfficialDashboard() {
   );
 
   const statCards = [
-    { label: 'Total Assigned', value: stats.total, icon: 'task', color: 'text-primary' },
+    { label: 'Assigned to you', value: stats.total, icon: 'task', color: 'text-primary' },
     { label: 'Reported', value: stats.reported, icon: 'flag', color: 'text-amber-600' },
-    { label: 'Under Review', value: stats.underReview, icon: 'visibility', color: 'text-blue-600' },
-    { label: 'In Progress', value: stats.inProgress, icon: 'autorenew', color: 'text-indigo-600' },
+    { label: 'Under review', value: stats.underReview, icon: 'visibility', color: 'text-blue-600' },
+    { label: 'In progress', value: stats.inProgress, icon: 'autorenew', color: 'text-indigo-600' },
     { label: 'Resolved', value: stats.resolved, icon: 'check_circle', color: 'text-green-600' },
     { label: 'Closed', value: stats.closed, icon: 'cancel', color: 'text-slate-600' },
   ];
@@ -91,10 +108,10 @@ export default function OfficialDashboard() {
   const dashboardSidebar = (
     <div className="space-y-4">
       <div className="civic-panel p-5">
-        <p className="civic-label">Operations desk</p>
-        <h3 className="mt-2 text-lg font-bold text-slate-900">Dashboard controls</h3>
+        <p className="civic-label">Filters</p>
+        <h3 className="mt-2 text-lg font-bold text-slate-900">Narrow these reports</h3>
         <p className="mt-1 text-sm leading-6 text-slate-600">
-          Narrow your case list by status or category and focus on the assignments that need movement now.
+          Narrow the list by status or problem type. Start with whatever has waited longest.
         </p>
       </div>
 
@@ -114,7 +131,7 @@ export default function OfficialDashboard() {
               >
                 <div className="flex items-center gap-2">
                   <Icon name={status === 'all' ? 'tune' : statusConfig[status as IssueStatus].icon} className="text-sm" />
-                  <span>{status === 'all' ? 'All Status' : statusConfig[status as IssueStatus].label}</span>
+                  <span>{status === 'all' ? 'All statuses' : statusConfig[status as IssueStatus].label}</span>
                 </div>
               </button>
             ))}
@@ -140,7 +157,7 @@ export default function OfficialDashboard() {
                   ) : (
                     <Icon name={categoryIcons[category]} className="text-sm" />
                   )}
-                  <span>{category === 'all' ? 'All Categories' : category.charAt(0).toUpperCase() + category.slice(1)}</span>
+                  <span>{category === 'all' ? 'All problems' : category.charAt(0).toUpperCase() + category.slice(1)}</span>
                 </div>
               </button>
             ))}
@@ -149,10 +166,10 @@ export default function OfficialDashboard() {
       </div>
 
       <div className="civic-panel p-5">
-        <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-600">Quick Stats</h4>
+        <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-600">Quick numbers</h4>
         <div className="mt-3 space-y-2">
           <div className="flex justify-between text-xs">
-            <span className="text-slate-600">Total Issues</span>
+            <span className="text-slate-600">All reports</span>
             <span className="font-bold text-slate-900">{stats.total}</span>
           </div>
           <div className="flex justify-between text-xs">
@@ -160,7 +177,7 @@ export default function OfficialDashboard() {
             <span className="font-bold text-green-600">{stats.resolved}</span>
           </div>
           <div className="flex justify-between text-xs">
-            <span className="text-slate-600">In Progress</span>
+            <span className="text-slate-600">In progress</span>
             <span className="font-bold text-indigo-600">{stats.inProgress}</span>
           </div>
         </div>
@@ -172,20 +189,31 @@ export default function OfficialDashboard() {
     <StandardLayout leftSidebar={dashboardSidebar} showRightSidebar={false}>
       <div className="min-h-screen space-y-8 px-6 py-6">
         <div>
-          <p className="civic-label">Administrative interface</p>
-          <h1 className="mt-2 font-display text-4xl tracking-[-0.02em] text-slate-900">Official Dashboard</h1>
+          <p className="civic-label">For officials</p>
+          <h1 className="mt-2 font-display text-4xl tracking-[-0.02em] text-slate-900">Reports sent to your office</h1>
           <p className="mt-2 text-slate-600">
-            Manage assigned issues, monitor progress, and maintain public trust through timely response.
+            Every report assigned to your office, in one place. Answer them here and everyone sees the reply.
           </p>
         </div>
 
-        {error && <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">{error}</div>}
+        {error && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
+            <span>{error}</span>
+            <button
+              onClick={fetchDashboard}
+              className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-100"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+        {takeError && <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">{takeError}</div>}
 
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
             <div className="civic-panel px-8 py-10 text-center">
               <div className="mx-auto mb-4 size-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              <p className="text-sm font-semibold text-slate-700">Loading dashboard...</p>
+              <p className="text-sm font-semibold text-slate-700">Opening your dashboard...</p>
             </div>
           </div>
         ) : (
@@ -204,7 +232,7 @@ export default function OfficialDashboard() {
 
             <div className="space-y-4">
               <h2 className="text-lg font-bold text-slate-900">
-                {filteredIssues.length} Issue{filteredIssues.length !== 1 ? 's' : ''}
+                {filteredIssues.length} report{filteredIssues.length !== 1 ? 's' : ''}
               </h2>
 
               {filteredIssues.length > 0 ? (
@@ -272,15 +300,29 @@ export default function OfficialDashboard() {
                           {issue.stats.likes}
                         </span>
                       </div>
-                      <span className="text-xs text-slate-500">{issue.timestamp}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-slate-500">{issue.timestamp}</span>
+                        {!issue.assignedTo && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleTakeIssue(issue.id);
+                            }}
+                            disabled={takingId !== null}
+                            className="rounded-lg bg-primary px-4 py-2 text-xs font-bold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {takingId === issue.id ? 'Taking...' : 'Take'}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))
               ) : (
                 <div className="civic-panel flex flex-col items-center justify-center py-16 text-center">
                   <Icon name="inbox" className="mb-4 text-6xl text-slate-300" />
-                  <h3 className="mb-2 text-lg font-bold text-slate-900">No issues found</h3>
-                  <p className="text-slate-600">Try adjusting your filters</p>
+                  <h3 className="mb-2 text-lg font-bold text-slate-900">No reports here</h3>
+                  <p className="text-slate-600">Try a different filter</p>
                 </div>
               )}
             </div>

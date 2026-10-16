@@ -14,6 +14,8 @@ import PostDetailsPage from './pages/PostDetailsPage';
 import IssueDetailsPage from './pages/IssueDetailsPage';
 import OfficialDashboard from './pages/OfficialDashboard';
 import SettingsPage from './pages/SettingsPage';
+import VerifyOfficePage from './pages/VerifyOfficePage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
@@ -30,6 +32,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/feed" element={<TimelinePage />} />
             <Route path="/profile" element={<ProfilePage />} />
@@ -40,6 +43,7 @@ function App() {
             <Route path="/post/:id" element={<PostDetailsPage />} />
             <Route path="/issue/:id" element={<IssueDetailsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/verify-office" element={<VerifyOfficePage />} />
           </Route>
           <Route element={<ProtectedRoute requireOfficial />}>
             <Route path="/dashboard/official" element={<OfficialDashboard />} />
