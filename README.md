@@ -1,112 +1,68 @@
-# CivicNet — Citizen Service Delivery Platform
+# CivicNet
 
-> A civic network for developing democracies. Citizens report local issues, verified officials reply on the record — from ward to federal level. Nothing goes silent.
+CivicNet is a civic accountability platform built around one problem: when a citizen reports a broken road, a clogged drain, or a missing streetlight, it usually stays informal — a WhatsApp complaint with no owner, no timeline, and no way to tell if it was ever fixed. CivicNet makes that silence visible: every report is tied to a ward, local government area, and state; it climbs toward the right official if it goes unanswered; and replies come from named, verified offices with names and dates attached. Nothing goes silent.
 
-**Stack:** Django · DRF · PostgreSQL (prod) / SQLite (dev) · React 19 + Vite + Tailwind · Docker Compose (VPS)
+## Who it's for
 
-## The problem
+- **Citizens:** report local problems with photos, track them as they move from ward to LGA to state to federal level, see who is responsible, and how long they've been waiting.
+- **Government officials:** verified officials claim issues from their jurisdiction, update status with on-the-record replies, and see their own resolution metrics on a dashboard.
+- **Anyone browsing:** the landing page shows a live map of Nigeria with recent reports, so the scale of civic activity is visible, not hidden in group chats.
 
-Service complaints — water, roads, power, health, waste, safety — usually stay informal: word of mouth, chat groups, no public record, no clear owner, no follow-through. CivicNet makes delivery public: one place to file a case with its state / LGA / ward attached, escalation as an issue gains signal, a named verified official accountable for the reply, and a full status-history trail anyone can inspect.
+## What it does (shipped)
 
-## User roles
+**Reporting and tracking**
+- File a report with a title, description, category, ward/LGA/state location, and an optional photo.
+- Every report is placed on a live map of Nigeria (landing page) with rotating hotspot pins colored by status: open (grey), in progress (green), resolved (gold).
+- Reports carry a status trail — Reported → Seen → Assigned → In progress → Resolved — and a visible "Day N" counter showing how long they've been waiting.
 
-| Role | What they do |
-|---|---|
-| **Citizen** | Sign up, file issues, post to the feed, upvote, comment, message officials, bookmark, track status history |
-| **Official** | Verified account tied to a jurisdiction (ward / LGA / state); claim issues, update status with notes, reply on the record, view resolution metrics on the official dashboard |
-| **Admin** | Django admin (`/admin/`): users, profiles, issues, jurisdictions, full CRUD |
+**Officials reply on the record**
+- Verified officials (verified by staff through a request flow) are assigned issues from their jurisdiction.
+- Replies are styled differently from citizen comments: name, office, and date attached, in a dedicated block.
+- Officials can take an issue, update its status, resolve it, or escalate it to the next level if it isn't moving.
+- Official profiles show real impact: issues raised, answered, and resolution rate.
 
-Roles live in `UserProfile.role` (`citizen` / `official`); verification in `UserProfile.is_verified`; jurisdiction in `OfficialJurisdiction`.
+**Feed and discussion**
+- Feed with three tabs: For you, Near me (ward scope), and Official replies.
+- Posts and issues side by side, with Support (like), comment, share, and bookmark actions.
+- Official replies render as separate blocks so the official voice is easy to spot.
 
-## Key features
+**Messaging and notifications**
+- Direct messages between citizens and officials with unread indicators.
+- Notifications centre groups updates by issue and shows transitions inline ("Pothole on Shomolu: Open → In progress").
 
-1. **Issue reporting + escalation ladder** — category, scope (`local` / `state` / `national`), priority, state / LGA / ward, image URL, upvotes; issues route Ward → LGA → State → Federal as they gain signal.
-2. **Verified officials, on-the-record replies** — issue assignment (`assign` / `assign_to_me`), status updates with notes, `StatusHistory` audit log, per-official resolution metrics.
-3. **Live Nigeria civic map (landing)** — interactive SVG map with rotating case pins, status legend (open / in progress / resolved), and hover cards showing citizen reports with official replies (`frontend/src/components/landing/NigeriaMap.tsx`).
-4. **Social feed + engagement** — posts, likes, threaded comments on posts and issues, bookmarks, explore, notifications.
-5. **Messaging + notifications** — direct messages (inbox / sent / read receipts), notification centre (comment, like, message, mention, follow).
-6. **Secure token auth** — DRF `TokenAuthentication`, password hashing, Django password validators, CORS/CSRF allow-lists, secure cookies + SSL redirect in production.
+**Settings**
+- Account details (name, username, email), Voter ID (last digits only), privacy toggles (hide name in comments), alert preferences, and email digest settings — with plain-language explanations for each.
+
+**Technical integrity**
+- Read-only mode: seed data is Nigerian names and real local government areas, not John Doe placeholders. Empty states say "Be the first in your ward" instead of showing made-up numbers.
+- Single Sovereign Paper palette (paper + deep forest green + gold) so it works in sunlight; no light/dark mode toggle to manage.
+- Mobile bottom navigation with a large Report button.
 
 ## Tech stack
 
 | Layer | Tech |
 |---|---|
-| Backend | Django 6, DRF, `rest_framework.authtoken`, django-cors-headers, Whitenoise, Gunicorn |
-| Database | SQLite locally → PostgreSQL in production via `dj-database-url` + `psycopg2-binary` |
+| Backend | Django 6, Django REST Framework, `rest_framework.authtoken`, Whitenoise, Gunicorn |
+| Database | SQLite locally → PostgreSQL in production via `dj-database-url` |
 | Frontend | React 19, Vite 7, React Router 7, Tailwind 3, Axios, Framer Motion, Lucide |
 | Deploy | `docker-compose.yml` + `deploy.sh`: Postgres + Gunicorn backend + nginx SPA frontend on one VPS |
 
 ## Data model
 
-Source of truth: `backend/civic_connect/connectapp/models.py`. Editable source for diagrams: `docs/er-diagram.mmd` (imports into Mermaid Live / draw.io).
+Source of truth: `backend/civic_connect/connectapp/models.py`.
 
-```mermaid
-erDiagram
-    User ||--o| UserProfile : has
-    User ||--o{ Issue : creates
-    User ||--o{ Issue : assigned_to
-    User ||--o| OfficialJurisdiction : has
-    User ||--o{ Post : authors
-    User ||--o{ Comment : authors
-    User ||--o{ Message : sends
-    User ||--o{ Message : receives
-    User ||--o{ Notification : receives
-    User ||--o{ BookmarkedItem : saves
-    Issue ||--o{ StatusHistory : logs
-    Issue ||--o{ Comment : has
-    Post ||--o{ Comment : has
-    Comment ||--o{ Comment : replies_to
-
-    UserProfile {
-        string role
-        bool is_verified
-        string state
-        string lga
-        string ward
-    }
-    Issue {
-        string title
-        string category
-        string status
-        string scope
-        string priority
-        string state
-        string lga
-        string ward
-        int upvotes
-    }
-    StatusHistory {
-        string status
-        string note
-    }
-    OfficialJurisdiction {
-        string jurisdiction_level
-    }
-    Post {
-        string content
-    }
-    Comment {
-        int post FK
-        int issue FK
-        int parent FK
-    }
-    Message {
-        bool is_read
-    }
-    Notification {
-        string notification_type
-    }
-    BookmarkedItem {
-        string item_type
-    }
-```
+- **User / UserProfile:** citizens and verified officials, with jurisdiction (ward / LGA / state) and verification status.
+- **Issue:** title, description, category, status, scope, priority, state/LGA/ward, upvotes, image URL, assigned official, escalation level, days waiting, status history.
+- **StatusHistory:** every status change with who made it and when — the audit trail behind "nothing goes silent."
+- **Post / Comment:** feed updates and replies on issues or posts.
+- **Message:** direct messages between citizens and officials.
+- **Notification / BookmarkedItem:** activity feed and saved reports.
 
 ## Run it locally
 
 Prerequisites: Python 3.12+, Node 20+.
 
 **Backend:**
-
 ```bash
 cd backend/civic_connect
 python -m venv ../venv && ../venv/Scripts/activate   # Windows
@@ -119,30 +75,28 @@ python manage.py runserver
 # API → http://localhost:8000/api/   Admin → http://localhost:8000/admin/
 ```
 
-Demo accounts (via `python manage.py populate_sample_data`, password `password123`): `chinedu_citizen`, `jane_official`, `ahmed_resident`. Full endpoint reference: `backend/API_ENDPOINTS.md`.
-
 **Frontend:**
-
 ```bash
-cd frontend
+cd ../frontend   # from backend/civic_connect, go up to frontend/
+cp .env.example .env   # set VITE_API_URL=http://localhost:8000/api if running on one machine
 npm install
-cp .env.example .env.development   # set VITE_API_URL, VITE_GOOGLE_CLIENT_ID
-npm run dev                        # → http://localhost:5173
+npm run dev   # → http://localhost:5173
 ```
 
-Environment variables are documented in `backend/civic_connect/.env.example` and `frontend/.env.example` (placeholders only — real secrets stay out of git).
+**Mobile on the same Wi-Fi:** set `VITE_API_URL=http://<your-pc-ip>:8000/api` and start Vite with `--host`. Make sure your PC firewall allows inbound 8000 and 5173, and add your PC's IP to `ALLOWED_HOSTS` / `CORS_ALLOWED_ORIGINS` in `backend/civic_connect/civic_connect/settings.py`.
 
-## Deployment (VPS)
+## What's coming next
 
-One VPS, one command. `docker-compose.yml` runs Postgres 16, the Gunicorn backend, and an nginx frontend that serves the SPA and proxies `/api`, `/admin`, `/healthz` to Django (same-origin, so no CORS dance).
+- Verification-request UI for citizens and staff review flow (endpoints exist; UI template page is in place).
+- Password reset flow (backend endpoints exist; forgot-password page wired).
+- Escalation UI on feed cards using the backend `escalation_level` field instead of the current scope heuristic.
+- Guided report flow (what → where → photo → who) instead of the current popup composer.
+- WhatsApp sharing with a link preview, and language toggles (Pidgin, Yoruba, Hausa, Igbo).
 
-```bash
-cp .env.vps.example .env.vps   # fill in secrets + domain
-./deploy.sh                    # build, migrate, start, health-check
-./deploy.sh --createsuperuser  # admin account
-```
+## License
 
 `deploy.sh` generates secrets into `.env.vps` (gitignored, never commit it) on first run. Postgres data lives in `./data/postgres` in the work tree (also gitignored — back it up with the rest of the VPS). Set `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS` to your domain, and flip `SECURE_SSL_REDIRECT=True` once TLS terminates in front.
+
 ## Project structure
 
 ```
@@ -173,3 +127,10 @@ cp .env.vps.example .env.vps   # fill in secrets + domain
 - App screenshots (`docs/screenshots/`) — 1440×900, no personal data
 - Google sign-in end-to-end (`POST /api/auth/google/` verifies the ID token, creates the account + profile on first login, returns a DRF token; set `GOOGLE_CLIENT_ID` alongside `VITE_GOOGLE_CLIENT_ID`)
 - Backend test coverage (`connectapp/tests.py` is still the Django placeholder)
+- Verification-request UI for citizens and staff review flow (endpoints exist; UI template page is in place)
+- Password reset flow (backend endpoints exist; forgot-password page wired)
+- Escalation UI on feed cards using the backend `escalation_level` field instead of the current scope heuristic
+- Guided report flow (what → where → photo → who) instead of the current popup composer
+- WhatsApp sharing with a link preview, and language toggles (Pidgin, Yoruba, Hausa, Igbo)
+
+MIT. Built as a Final Year Project — production-ready concepts with a few placeholder areas marked in code where data sources haven't been wired yet (noted inline).
