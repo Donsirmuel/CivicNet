@@ -118,7 +118,7 @@ export const issuesService = {
   // Update issue status
   updateIssueStatus: async (id: number, status: string, note?: string): Promise<ActionResponse> => {
     try {
-      const response = await apiClient.post<ActionResponse>(`issues/${id}/update-status/`, {
+      const response = await apiClient.post<ActionResponse>(`issues/${id}/update_status/`, {
         status,
         note,
       });
@@ -136,6 +136,16 @@ export const issuesService = {
       return response.data;
     } catch {
       throw new Error('Failed to like issue');
+    }
+  },
+
+  // Unlike issue
+  unlikeIssue: async (id: number): Promise<ActionResponse> => {
+    try {
+      const response = await apiClient.post<ActionResponse>(`issues/${id}/unlike/`);
+      return response.data;
+    } catch {
+      throw new Error('Failed to unlike issue');
     }
   },
 
@@ -205,6 +215,17 @@ export const issuesService = {
       return normalizeListResponse(response.data);
     } catch {
       throw new Error('Failed to fetch status history');
+    }
+  },
+
+  // Escalate issue to the next scope level
+  escalateIssue: async (id: number): Promise<ActionResponse> => {
+    try {
+      const response = await apiClient.post<ActionResponse>(`issues/${id}/escalate/`);
+      clearListCache();
+      return response.data;
+    } catch {
+      throw new Error('Failed to escalate issue');
     }
   },
 };
