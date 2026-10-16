@@ -71,6 +71,9 @@ export interface Issue {
   image_url?: string;
   comments_list?: Comment[];
   status_history?: StatusHistory[];
+  escalation_level?: 'ward' | 'lga' | 'state' | 'federal';
+  escalated_at?: string;
+  days_waiting?: number;
   created_at: string;
   updated_at: string;
 }
@@ -120,6 +123,7 @@ export interface Notification {
   title: string;
   message: string;
   actor?: User;
+  actor_role?: string | null;
   post?: number;
   issue?: number;
   is_read: boolean;
@@ -155,4 +159,18 @@ export interface OfficialMetrics {
 export interface AuthResponse {
   token: string;
   user: User;
+}
+
+// Feed filter types (shared by the feed toolbar and pages)
+export type CivicFeedView = 'list' | 'map' | 'split';
+export type CivicFeedSort = 'newest' | 'priority' | 'discussed';
+
+export interface CivicFeedFilters {
+  search: string;
+  scope: 'all' | 'local' | 'state' | 'national';
+  contentType: 'all' | 'issue' | 'post' | 'official';
+  status: 'all' | 'reported' | 'under_review' | 'in_progress' | 'resolved' | 'closed';
+  category: 'all' | 'infrastructure' | 'safety' | 'health' | 'environment' | 'education' | 'transportation' | 'utilities' | 'other';
+  priority: 'all' | 'low' | 'medium' | 'high' | 'urgent';
+  verifiedOnly: boolean;
 }

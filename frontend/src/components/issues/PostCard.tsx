@@ -69,23 +69,15 @@ interface PostCardProps {
   escalationLevel?: string;
 }
 
-const AVATAR_COLORS = ['#a87b5a', '#0a6a3b', '#31572c', '#d4a540'];
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
-  const first = parts[0] ? parts[0][0] : '';
-  const second = parts.length > 1 && parts[parts.length - 1] ? parts[parts.length - 1][0] : '';
-  return `${first}${second}`.toUpperCase() || '?';
-}
-
-function getAvatarColor(name: string): string {
-  let hash = 0;
-  for (let i = 0; i < name.length; i += 1) {
-    hash = (hash + name.charCodeAt(i)) % 2147483647;
-  }
-  return AVATAR_COLORS[hash % AVATAR_COLORS.length] ?? AVATAR_COLORS[0] ?? '#0a6a3b';
-}
+// Neutral institutional palette — one accent color for actions/status
+const ACCENT = '#14323F'; // deep teal-navy
+const ACCENT_HOVER = '#0f2730';
+const MUTED = '#6B7280';
+const BORDER = '#E5E7EB';
+const SURFACE = '#FFFFFF';
+const PAGE = '#F9FAFB';
+const STATUS_GREEN = '#4A7C59';
+const STATUS_AMBER = '#B45309';
 
 function formatCategory(category: IssueCategory) {
   return category.charAt(0).toUpperCase() + category.slice(1);
@@ -130,12 +122,7 @@ export function getIssueStepIndex(issueStatus?: IssueStatus, assignedTo?: Post['
   return base;
 }
 
-/**
- * Parse a relative timestamp ("Just now", "2h ago", "12 days ago", ...)
- * into a Day N accountability counter. Day 1 = reported today,
- * Day N = full days elapsed + 1. Returns null when unparseable so the
- * caller can hide the counter.
- */
+/** Day N accountability counter — parsed from backend days_waiting or relative timestamp. */
 export function parseRelativeTimestampToDay(timestamp: string): number | null {
   const text = timestamp.toLowerCase().trim();
   if (!text) return null;
@@ -193,6 +180,8 @@ export default function PostCard({ post, onLike, onComment, onShare, onBookmark,
 
   const locationLabel = post.location ? getLocationString(post.location) : null;
   const categoryLabel = post.issueCategory ? formatCategory(post.issueCategory) : null;
+
+  // Day N: backend days_waiting is authoritative when present
   const dayN =
     post.type === 'issue'
       ? (typeof post.daysWaiting === 'number' && Number.isFinite(post.daysWaiting)
@@ -200,6 +189,7 @@ export default function PostCard({ post, onLike, onComment, onShare, onBookmark,
           : parseRelativeTimestampToDay(post.timestamp))
       : null;
   const daySuffix = dayN !== null ? ` · Day ${dayN}` : '';
+
   const statusStep = post.type === 'issue' ? getIssueStepIndex(post.issueStatus, post.assignedTo) : -1;
 
   const isResolved = post.issueStatus === 'resolved' || post.issueStatus === 'closed';
@@ -212,21 +202,21 @@ export default function PostCard({ post, onLike, onComment, onShare, onBookmark,
   if (post.type === 'issue') {
     if (isResolved) {
       chipLabel = 'Resolved';
-      chipBackground = 'rgba(10,106,59,.12)';
-      chipColor = '#0a6a3b';
+      chipBackground = 'rgba(74,124,89,.10)';
+      chipColor = STATUS_GREEN;
     } else if (post.assignedTo || isOfficialAuthor) {
       chipLabel = `In progress${daySuffix}`;
-      chipBackground = '#f4ead2';
-      chipColor = '#132033';
+      chipBackground = 'rgba(20,50,63,.08)';
+      chipColor = ACCENT;
     } else {
       chipLabel = `No reply${daySuffix}`;
-      chipBackground = 'rgba(218,92,78,.12)';
-      chipColor = '#da5c4e';
+      chipBackground = 'rgba(218,92,78,.10)';
+      chipColor = STATUS_AMBER;
     }
   } else {
     chipLabel = 'Update';
-    chipBackground = 'var(--civic-surface-inset)';
-    chipColor = 'var(--civic-muted)';
+    chipBackground = '#F3F4F6';
+    chipColor = MUTED;
   }
 
   const showVerifiedReply = replyText !== null || isOfficialAuthor;
@@ -242,9 +232,9 @@ export default function PostCard({ post, onLike, onComment, onShare, onBookmark,
   return (
     <article
       onClick={handleOpen}
-      className="rounded-[20px] border border-[var(--civic-border)] bg-white px-5 py-5"
-      style={{ boxShadow: '0 12px 28px rgba(22, 33, 51, 0.06)' }}
+      className="rounded-xl border border-[#E5E7EB] bg-[#FFFFFF] px-5 py-5"
     >
+      {/* Header row: avatar + name + date */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
           <button type="button" onClick={handleProfileClick} className="shrink-0" aria-label={`View ${post.author.name}`}>
@@ -260,11 +250,11 @@ export default function PostCard({ post, onLike, onComment, onShare, onBookmark,
             <button
               type="button"
               onClick={handleProfileClick}
-              className="block truncate text-left text-[15px] font-bold text-[var(--civic-text)]"
+              className="block truncate text-left text-[13px] font-semibold text-[#111827]"
             >
               {post.author.name}
             </button>
-            <p className="mt-0.5 truncate text-[13px] text-[var(--civic-muted)]">
+            <p className="mt-0.5 truncate text-[11px] text-[#6B7280]">
               {post.author.username} · {post.timestamp}
             </p>
           </div>
@@ -278,129 +268,143 @@ export default function PostCard({ post, onLike, onComment, onShare, onBookmark,
         </span>
       </div>
 
-      <div className="mt-4 space-y-2">
-        {post.title && (
-          <h3 className="font-display text-[20px] font-bold leading-snug text-[var(--civic-text-strong)]">
-            {post.title}
-          </h3>
-        )}
-        <p className="text-[15px] leading-7 text-[var(--civic-muted)]">{post.content}</p>
-        {post.type === 'issue' && statusStep >= 0 && (
-          <div
-            aria-label={`Status: ${STATUS_STEPS[statusStep]}, step ${statusStep + 1} of 5`}
-            className="flex items-start"
-            style={{ maxHeight: 34, minHeight: 34, overflow: 'hidden' }}
-          >
-            {STATUS_STEPS.map((label, i) => {
-              const isDone = i < statusStep;
-              const isCurrent = i === statusStep;
-              const dotStyle: CSSProperties = isDone
-                ? { width: 10, height: 10, borderRadius: 9999, background: '#0a6a3b', flexShrink: 0 }
-                : isCurrent
-                  ? {
-                      width: 10,
-                      height: 10,
+      {/* Title */}
+      {post.title && (
+        <h3 className="mt-4 text-[16px] font-semibold leading-snug text-[#111827]">
+          {post.title}
+        </h3>
+      )}
+
+      {/* Body */}
+      <p className="mt-2 text-[14px] leading-7 text-[#374151]">{post.content}</p>
+
+      {/* Status micro-trail */}
+      {post.type === 'issue' && statusStep >= 0 && (
+        <div
+          aria-label={`Status: ${STATUS_STEPS[statusStep]}, step ${statusStep + 1} of 5`}
+          className="flex items-start mt-3"
+          style={{ maxHeight: 30, minHeight: 30, overflow: 'hidden' }}
+        >
+          {STATUS_STEPS.map((label, i) => {
+            const isDone = i < statusStep;
+            const isCurrent = i === statusStep;
+            const dotStyle: CSSProperties = isDone
+              ? { width: 6, height: 6, borderRadius: 9999, background: ACCENT, flexShrink: 0 }
+              : isCurrent
+                ? {
+                      width: 6,
+                      height: 6,
                       borderRadius: 9999,
-                      background: '#fff',
-                      border: '2px solid #d4a540',
+                      background: '#FFF',
+                      border: `2px solid ${ACCENT}`,
                       boxSizing: 'border-box',
                       flexShrink: 0,
                     }
-                  : { width: 10, height: 10, borderRadius: 9999, background: '#e5ddcb', flexShrink: 0 };
-              return (
-                <div key={label} className={i < STATUS_STEPS.length - 1 ? 'flex min-w-0 flex-1 items-start' : 'flex min-w-0 items-start'} aria-hidden="true">
-                  <div className="flex shrink-0 flex-col items-center" style={{ width: 56 }}>
-                    <span style={dotStyle} />
-                    <span
-                      style={{
-                        marginTop: 4,
-                        fontSize: 9,
-                        lineHeight: 1,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.04em',
-                        whiteSpace: 'nowrap',
-                        color: isCurrent ? '#132033' : 'var(--civic-muted)',
-                        fontWeight: isCurrent ? 700 : 500,
-                      }}
-                    >
-                      {label}
-                    </span>
-                  </div>
-                  {i < STATUS_STEPS.length - 1 && (
-                    <div
-                      className="mx-1 min-w-2 flex-1"
-                      style={{
-                        height: 2,
-                        marginTop: 4,
-                        borderRadius: 2,
-                        background: i < statusStep ? '#0a6a3b' : '#e5ddcb',
-                      }}
-                    />
-                  )}
+                : { width: 6, height: 6, borderRadius: 9999, background: '#E5E7CB', flexShrink: 0 };
+            return (
+              <div key={label} className={i < STATUS_STEPS.length - 1 ? 'flex min-w-0 flex-1 items-start' : 'flex min-w-0 items-start'} aria-hidden="true">
+                <div className="flex shrink-0 flex-col items-center" style={{ width: 52 }}>
+                  <span style={dotStyle} />
+                  <span
+                    style={{
+                      marginTop: 3,
+                      fontSize: 10,
+                      lineHeight: 1,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      whiteSpace: 'nowrap',
+                      color: isCurrent ? '#14323F' : '#6B7280',
+                      fontWeight: isCurrent ? 700 : 400,
+                    }}
+                  >
+                    {label}
+                  </span>
                 </div>
-              );
-            })}
-          </div>
-        )}
-        {(locationLabel || categoryLabel) && (
-          <p className="text-[13px] font-semibold text-[#0a6a3b]">
+                {i < STATUS_STEPS.length - 1 && (
+                  <div
+                    className="mx-1 min-w-2 flex-1"
+                    style={{
+                      height: 1,
+                      marginTop: 4.5,
+                      borderRadius: 2,
+                      background: i < statusStep ? '#14323F' : '#E5E7CB',
+                    }}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Location + category */}
+      {(locationLabel || categoryLabel) && (
+        <div className="mt-2 flex items-center gap-2">
+          <span className="text-[11px] font-semibold text-[#6B7280]">
             {locationLabel}
-            {locationLabel && categoryLabel ? ' · ' : ''}
-            {categoryLabel}
-          </p>
-        )}
-        {showEscalated && (
-          <p className="text-[13px] font-semibold" style={{ color: '#da5c4e' }}>
-            Escalated to {escalationTarget}
-          </p>
-        )}
-      </div>
+          </span>
+          {categoryLabel && (
+            <span className="inline-flex items-center rounded-full border border-[#E5E7EB] px-2 py-0.5 text-[10px] font-semibold text-[#4B5563]">
+              {categoryLabel}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Escalation note */}
+      {showEscalated && (
+        <p className="mt-1 text-[11px] font-semibold text-[#6B7280]">
+          Escalated to {escalationTarget}
+        </p>
+      )}
 
       {post.image && (
-        <div className="mt-4 overflow-hidden rounded-[20px]">
+        <div className="mt-4 overflow-hidden rounded-xl">
           <img className="aspect-[16/9] w-full object-cover" src={post.image} alt="Post content" />
         </div>
       )}
 
+      {/* Verified reply block */}
       {showVerifiedReply && (
         <div
           className="mt-4 rounded-r-[12px] rounded-l-md px-4 py-3"
-          style={{ background: 'rgba(10,106,59,.07)', borderLeft: '3px solid #0a6a3b' }}
+          style={{ background: 'rgba(74,124,89,.07)', borderLeft: '3px solid #4A7C59' }}
         >
-          <p className="text-[13px] font-bold text-[#0a6a3b]">
+          <p className="text-[13px] font-bold text-[#4A7C59]">
             Verified reply · {replyName}
             {replyOffice ? `, ${replyOffice}` : ''}
           </p>
-          <p className="mt-1 text-[13px] leading-6 text-[var(--civic-muted)]">
+          <p className="mt-1 text-[13px] leading-6 text-[#6B7280]">
             {replyBody} · {replyDate}
           </p>
         </div>
       )}
 
+      {/* Action row */}
       <div
         className="mt-4 flex items-center justify-between border-t pt-3"
-        style={{ borderColor: 'var(--civic-border)' }}
+        style={{ borderColor: '#E5E7EB' }}
       >
-        <div className="flex items-center gap-4 text-[13px] text-[var(--civic-muted)]">
+        <div className="flex items-center gap-4 text-[13px] text-[#6B7280]">
           <button
             type="button"
             onClick={stopAndRun(onLike)}
             aria-label={post.liked ? 'Remove support' : 'Support this'}
-            className={post.liked ? 'font-bold text-[#0a6a3b]' : 'font-medium hover:text-[var(--civic-text)]'}
+            className={post.liked ? 'font-bold text-[#14323F]' : 'font-medium hover:text-[#14323F]'}
           >
             Support · {post.stats.likes}
           </button>
           <button
             type="button"
             onClick={stopAndRun(onComment)}
-            className="font-medium hover:text-[var(--civic-text)]"
+            className="font-medium hover:text-[#14323F]"
           >
             Comments · {post.stats.comments}
           </button>
           <button
             type="button"
             onClick={stopAndRun(onShare)}
-            className="font-medium hover:text-[var(--civic-text)]"
+            className="font-medium hover:text-[#14323F]"
           >
             Share
           </button>
@@ -409,11 +413,29 @@ export default function PostCard({ post, onLike, onComment, onShare, onBookmark,
           type="button"
           onClick={stopAndRun(onBookmark)}
           aria-label={post.bookmarked ? 'Remove bookmark' : 'Save post'}
-          className={`text-[13px] hover:text-[var(--civic-text)] ${post.bookmarked ? 'font-bold text-[#0a6a3b]' : 'font-medium text-[var(--civic-muted)]'}`}
+          className={`text-[13px] hover:text-[#14323F] ${post.bookmarked ? 'font-bold text-[#14323F]' : 'font-medium text-[#6B7280]'}`}
         >
           {post.bookmarked ? 'Saved' : 'Save'}
         </button>
       </div>
     </article>
   );
+}
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  const first = parts[0] ? parts[0][0] : '';
+  const second = parts.length > 1 && parts[parts.length - 1] ? parts[parts.length - 1][0] : '';
+  return `${first}${second}`.toUpperCase() || '?';
+}
+
+function getAvatarColor(name: string): string {
+  // Neutral institutional avatar colors — slate/gold cycle
+  const COLORS = ['#a87b5a', '#0a6a3b', '#31572c'];
+  let hash = 0;
+  for (let i = 0; i < name.length; i += 1) {
+    hash = (hash + name.charCodeAt(i)) % 2147483647;
+  }
+  return COLORS[hash % COLORS.length] ?? COLORS[0] ?? '#0a6a3b';
 }
