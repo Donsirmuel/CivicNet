@@ -71,11 +71,7 @@ interface PostCardProps {
 
 // Neutral institutional palette — one accent color for actions/status
 const ACCENT = '#14323F'; // deep teal-navy
-const ACCENT_HOVER = '#0f2730';
 const MUTED = '#6B7280';
-const BORDER = '#E5E7EB';
-const SURFACE = '#FFFFFF';
-const PAGE = '#F9FAFB';
 const STATUS_GREEN = '#4A7C59';
 const STATUS_AMBER = '#B45309';
 
@@ -144,14 +140,6 @@ export function parseRelativeTimestampToDay(timestamp: string): number | null {
   else if (unit.startsWith('month')) elapsedDays = value * 30;
   else if (unit.startsWith('year')) elapsedDays = value * 365;
   else return null;
-  return Math.max(1, elapsedDays + 1);
-}
-
-export function getDayNFromDate(createdAt: string | Date): number | null {
-  const created = createdAt instanceof Date ? createdAt : new Date(createdAt);
-  const time = created.getTime();
-  if (Number.isNaN(time)) return null;
-  const elapsedDays = Math.floor((Date.now() - time) / 86400000);
   return Math.max(1, elapsedDays + 1);
 }
 
