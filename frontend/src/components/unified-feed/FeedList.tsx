@@ -22,7 +22,7 @@ export default function FeedList({
   if (posts.length === 0) {
     return (
       <div className="px-4 py-10 lg:px-6">
-        <div className="rounded-[28px] border border-[var(--civic-border)] bg-[linear-gradient(180deg,var(--civic-surface)_0%,var(--civic-surface-soft)_100%)] px-6 py-12 text-center" style={{ boxShadow: '0 20px 40px -34px rgba(22, 33, 51, 0.24)' }}>
+        <div className="rounded-[20px] border border-[var(--civic-border)] bg-white px-6 py-12 text-center" style={{ boxShadow: '0 12px 28px rgba(22, 33, 51, 0.06)' }}>
           <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-[var(--civic-surface-inset)]">
             <span className="material-symbols-outlined text-4xl text-[var(--civic-muted)]">travel_explore</span>
           </div>

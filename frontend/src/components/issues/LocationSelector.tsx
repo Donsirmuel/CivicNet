@@ -77,7 +77,7 @@ export default function LocationSelector({ value, onChange, required = false }: 
           style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-ghost-border)' }}
           required={required}
         >
-          <option value="">Select State</option>
+          <option value="">Select state</option>
           {nigeriaLocationData.map((state) => (
             <option key={state.id} value={state.id}>
               {state.name}
@@ -124,7 +124,7 @@ export default function LocationSelector({ value, onChange, required = false }: 
             style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-ghost-border)' }}
             required={required}
           >
-            <option value="">Select Ward</option>
+            <option value="">Select ward</option>
             {selectedLGA.wards.map((ward) => (
               <option key={ward.id} value={ward.id}>
                 {ward.name}

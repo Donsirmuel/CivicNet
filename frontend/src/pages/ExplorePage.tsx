@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { Post } from '../components/issues/PostCard';
 import FeedList from '../components/unified-feed/FeedList';
-import { type CivicFeedFilters } from '../components/unified-feed/FilterBar';
+import { type CivicFeedFilters } from '../types';
 import ViewToolbar from '../components/unified-feed/ViewToolbar';
 import StandardLayout from '../layouts/StandardLayout';
 import { issuesService, postsService } from '../services';
@@ -40,6 +40,27 @@ export default function ExplorePage() {
   const [error, setError] = useState<string | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [activeTab, setActiveTab] = useState<SearchTab>('top');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+function avatarColor(seed: string): string {
+  const AVATAR_COLORS = ['#6b4f3a', '#0a6a3b', '#b8912f'];
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+}
+
+function initialsFor(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length > 1 && parts[0][0] && parts[1][0]) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return name.trim().slice(0, 2).toUpperCase() || 'CI';
+}
+
+function isFallbackAvatar(url?: string): boolean {
+  if (!url) return true;
+  return url.includes('unsplash');
+}
 
   const filters: CivicFeedFilters = {
     ...defaultFilters,
@@ -48,30 +69,30 @@ export default function ExplorePage() {
     contentType: (searchParams.get('type') as CivicFeedFilters['contentType']) || 'all',
   };
 
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const [issues, fetchedPosts] = await Promise.all([
+        issuesService.getIssues({ ordering: '-created_at' }).catch(() => []),
+        postsService.getPosts({ ordering: '-created_at' }).catch(() => []),
+      ]);
+
+      const merged = [...issues.map(convertIssueToPost), ...fetchedPosts.map(convertBackendPostToPost)].sort(
+        (a, b) => timeToMs(b.timestamp) - timeToMs(a.timestamp),
+      );
+
+      setPosts(merged);
+    } catch (err) {
+      setError('We could not load search results right now. Please refresh and try again.');
+      console.error('Error fetching search results:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        const [issues, fetchedPosts] = await Promise.all([
-          issuesService.getIssues({ ordering: '-created_at' }).catch(() => []),
-          postsService.getPosts({ ordering: '-created_at' }).catch(() => []),
-        ]);
-
-        const merged = [...issues.map(convertIssueToPost), ...fetchedPosts.map(convertBackendPostToPost)].sort(
-          (a, b) => timeToMs(b.timestamp) - timeToMs(a.timestamp),
-        );
-
-        setPosts(merged);
-      } catch (err) {
-        setError('We could not load search results right now. Please refresh and try again.');
-        console.error('Error fetching search results:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
 
@@ -149,9 +170,17 @@ export default function ExplorePage() {
 
     try {
       if (target.type === 'issue') {
-        await issuesService.likeIssue(parseInt(postId, 10));
+        if (target.liked) {
+          await issuesService.unlikeIssue(parseInt(postId, 10));
+        } else {
+          await issuesService.likeIssue(parseInt(postId, 10));
+        }
       } else {
-        await postsService.likePost(parseInt(postId, 10));
+        if (target.liked) {
+          await postsService.unlikePost(parseInt(postId, 10));
+        } else {
+          await postsService.likePost(parseInt(postId, 10));
+        }
       }
     } catch (err) {
       console.error('Failed to like result:', err);
@@ -184,8 +213,11 @@ export default function ExplorePage() {
     const url = `${window.location.origin}/${post.type === 'issue' ? 'issue' : 'post'}/${postId}`;
     try {
       await navigator.clipboard.writeText(url);
+      setCopiedId(postId);
+      setTimeout(() => setCopiedId((current) => (current === postId ? null : current)), 2000);
     } catch (err) {
       console.error('Unable to copy share link:', err);
+      window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -240,7 +272,20 @@ export default function ExplorePage() {
 
             {error && (
               <div className="mt-4 rounded-md px-5 py-4 text-sm font-medium text-[var(--civic-danger)]" style={{ background: 'rgba(218,92,78,0.12)', boxShadow: 'inset 0 0 0 1px rgba(218,92,78,0.22)' }}>
-                {error}
+                <p>{error}</p>
+                <button
+                  type="button"
+                  onClick={fetchData}
+                  className="mt-3 inline-flex items-center gap-1 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[var(--civic-primary-contrast)]"
+                  style={{ background: 'linear-gradient(135deg, var(--civic-primary) 0%, var(--civic-primary-deep) 100%)' }}
+                >
+                  Try again
+                </button>
+              </div>
+            )}
+            {copiedId && (
+              <div role="status" className="mt-4 rounded-md px-5 py-3 text-sm font-semibold text-[var(--civic-primary)]" style={{ background: 'var(--civic-primary-glow)' }}>
+                Link copied
               </div>
             )}
 
@@ -268,11 +313,21 @@ export default function ExplorePage() {
                           className="flex w-full items-center gap-4 rounded-md px-5 py-4 text-left transition hover:-translate-y-0.5"
                           style={{ background: 'var(--civic-surface)', boxShadow: 'var(--civic-shadow-soft)' }}
                         >
-                          <img
-                            src={person.avatar}
-                            alt={person.name}
-                            className="size-12 rounded-md object-cover"
-                          />
+                          {isFallbackAvatar(person.avatar) ? (
+                            <div
+                              aria-hidden
+                              className="flex size-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+                              style={{ backgroundColor: avatarColor(person.username || person.name) }}
+                            >
+                              {initialsFor(person.name)}
+                            </div>
+                          ) : (
+                            <img
+                              src={person.avatar}
+                              alt={person.name}
+                              className="size-12 rounded-md object-cover"
+                            />
+                          )}
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-bold text-[var(--civic-text)]">{person.name}</p>
                             <p className="mt-1 truncate text-xs text-[var(--civic-muted)]">{person.username}</p>
