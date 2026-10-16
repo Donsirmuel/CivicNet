@@ -30,6 +30,16 @@ interface ThreadMessage {
   timestamp: string;
 }
 
+const AVATAR_COLORS = ['#6b4f3a', '#0a6a3b', '#b8912f'];
+
+function avatarColor(seed: string): string {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+}
+
 function displayName(user: User): string {
   const full = [user.first_name, user.last_name].filter(Boolean).join(' ').trim();
   return full || user.username;
@@ -65,12 +75,20 @@ function fullTimestamp(iso: string): string {
   return sameDay ? time : `${date.toLocaleDateString()} · ${time}`;
 }
 
-function AvatarCircle({ initials, size = 'size-11' }: { initials: string; size?: string }) {
+function AvatarCircle({
+  initials,
+  seed,
+  size = 'h-11 w-11',
+}: {
+  initials: string;
+  seed?: string;
+  size?: string;
+}) {
   return (
     <div
       aria-hidden
-      className={`${size} flex shrink-0 items-center justify-center rounded-md text-sm font-bold text-[var(--civic-primary-contrast)]`}
-      style={{ background: 'linear-gradient(135deg, var(--civic-primary) 0%, var(--civic-primary-deep) 100%)' }}
+      className={`${size} flex shrink-0 items-center justify-center rounded-full text-sm font-bold text-white`}
+      style={{ backgroundColor: avatarColor(seed ?? initials) }}
     >
       {initials}
     </div>
@@ -305,157 +323,132 @@ export default function MessagesPage() {
   };
 
   const renderConversationList = (mobile = false) => (
-    <div className={`flex h-full flex-col ${mobile ? 'space-y-4' : ''}`}>
-      <div
-        className={mobile ? 'civic-section' : 'border-b px-5 py-5'}
-        style={mobile ? undefined : { borderColor: 'var(--civic-border)' }}
-      >
-        <div className="flex items-center justify-between gap-3">
-          <p className="civic-label">Messages</p>
-          <button
-            onClick={() => setComposing((open) => !open)}
-            className="civic-icon-button size-9"
-            aria-label="Start a new conversation"
-            title="New conversation"
-          >
-            <Icon name="edit_square" className="text-xl" />
-          </button>
-        </div>
-        <h1 className="mt-3 font-display text-[1.9rem] tracking-[-0.02em] text-[var(--civic-text)]">Messages</h1>
-
-        {composing && (
-          <div className="mt-4 rounded-md p-3" style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}>
-            <input
-              type="text"
-              value={userSearch}
-              onChange={(event) => searchForUsers(event.target.value)}
-              placeholder="Search people by name..."
-              className="min-h-11 w-full rounded-md bg-transparent px-3 text-sm text-[var(--civic-text)] placeholder:text-[var(--civic-muted)] outline-none"
-              style={{ background: 'var(--civic-surface)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}
-            />
-            {searchingUsers && (
-              <p className="mt-2 text-xs text-[var(--civic-muted)]">Searching...</p>
-            )}
-            {userResults.map((user) => (
-              <button
-                key={user.id}
-                onClick={() => startConversation(user)}
-                className="mt-2 flex w-full items-center gap-3 rounded-md p-2 text-left transition hover:bg-[var(--civic-primary-glow)]"
-              >
-                <AvatarCircle initials={initialsFor(user)} size="size-9" />
-                <span>
-                  <span className="block text-sm font-bold text-[var(--civic-text)]">
-                    {displayName(user)}
-                  </span>
-                  <span className="block text-xs text-[var(--civic-muted)]">@{user.username}</span>
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
-
-        <div className="relative mt-4">
-          <Icon
-            name="search"
-            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--civic-muted)]"
-          />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Search messages"
-            className="min-h-12 w-full rounded-md bg-transparent py-3 pl-12 pr-4 text-sm text-[var(--civic-text)] placeholder:text-[var(--civic-muted)] outline-none"
-            style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}
-          />
-        </div>
+    <div className="flex h-full flex-col">
+      <div className="flex items-center justify-between gap-3 px-1 pb-4">
+        <h1 className="font-serif text-2xl text-[#1a2b23]">Messages</h1>
+        <button
+          onClick={() => setComposing((open) => !open)}
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-[#e9e0d0] bg-white text-[#1a2b23] transition hover:bg-[#f0f7f2]"
+          aria-label="Start a new conversation"
+          title="New conversation"
+        >
+          <Icon name="edit_square" className="text-xl" />
+        </button>
       </div>
 
-      <div className={`flex-1 overflow-y-auto civic-scrollbar ${mobile ? 'space-y-3' : ''}`}>
+      {composing && (
+        <div className="mb-3 rounded-2xl border border-[#e9e0d0] bg-white p-3">
+          <input
+            type="text"
+            value={userSearch}
+            onChange={(event) => searchForUsers(event.target.value)}
+            placeholder="Search people by name"
+            className="min-h-11 w-full rounded-full border border-[#e9e0d0] bg-white px-4 text-sm text-[#1a2b23] placeholder:text-[#8a938e] outline-none focus:border-[#0a6a3b]"
+          />
+          {searchingUsers && (
+            <p className="mt-2 text-[13px] text-[#8a938e]">Searching...</p>
+          )}
+          {userResults.map((user) => (
+            <button
+              key={user.id}
+              onClick={() => startConversation(user)}
+              className="mt-1 flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-[#f0f7f2]"
+            >
+              <AvatarCircle initials={initialsFor(user)} seed={user.username} size="h-9 w-9" />
+              <span className="min-w-0">
+                <span className="block truncate text-[15px] font-bold text-[#1a2b23]">
+                  {displayName(user)}
+                </span>
+                <span className="block truncate text-[13px] text-[#8a938e]">@{user.username}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="relative mb-3">
+        <Icon
+          name="search"
+          className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#8a938e]"
+        />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Search messages"
+          className="min-h-12 w-full rounded-full border border-[#e9e0d0] bg-white py-3 pl-12 pr-4 text-sm text-[#1a2b23] placeholder:text-[#8a938e] outline-none focus:border-[#0a6a3b]"
+        />
+      </div>
+
+      <div className={`flex-1 overflow-y-auto civic-scrollbar ${mobile ? '' : ''}`}>
         {loading && (
-          <div className="flex items-center justify-center px-5 py-16">
-            <div className="size-10 animate-spin rounded-full border-2 border-primary border-t-transparent" role="status" aria-label="Loading messages" />
+          <div className="flex items-center justify-center rounded-2xl border border-[#e9e0d0] bg-white px-5 py-16">
+            <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#0a6a3b] border-t-transparent" role="status" aria-label="Loading messages" />
           </div>
         )}
 
         {error && !loading && (
-          <div className="px-5 py-10 text-center">
-            <Icon name="cloud_off" className="mx-auto mb-4 text-5xl text-[var(--civic-muted)]" />
-            <p className="text-lg font-bold text-[var(--civic-text)]">Something went wrong</p>
-            <p className="mt-2 text-sm text-[var(--civic-muted)]">{error}</p>
-            <button onClick={loadMessages} className="civic-ghost-button mt-4">
+          <div className="rounded-2xl border border-[#e9e0d0] bg-white px-5 py-10 text-center">
+            <p className="font-serif text-xl text-[#1a2b23]">Could not load messages</p>
+            <p className="mt-2 text-sm text-[#8a938e]">{error}</p>
+            <button
+              onClick={loadMessages}
+              className="mt-4 rounded-full bg-[#0a6a3b] px-5 py-2 text-sm font-semibold text-white transition hover:brightness-105"
+            >
               Try again
             </button>
           </div>
         )}
 
-        {!loading && !error && filteredConversations.map((conversation) => {
-          const isSelected = selectedConversation === conversation.id && !pendingCounterpart;
-          return (
-            <button
-              key={conversation.id}
-              onClick={() => selectConversation(conversation.id)}
-              className={`w-full text-left transition ${mobile ? 'rounded-md p-4' : 'border-b px-5 py-5'}`}
-              style={{
-                borderColor: mobile ? undefined : 'var(--civic-border)',
-                background: mobile
-                  ? isSelected
-                    ? 'var(--civic-primary-glow)'
-                    : 'var(--civic-surface)'
-                  : isSelected
-                    ? 'var(--civic-primary-glow)'
-                    : 'transparent',
-                boxShadow: mobile ? 'var(--civic-shadow-soft)' : undefined,
-              }}
-            >
-              <div className="flex gap-3">
-                <AvatarCircle initials={conversation.user.initials} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <p className="truncate text-sm font-bold text-[var(--civic-text)]">
+        {!loading && !error && filteredConversations.length > 0 && (
+          <div className="divide-y divide-[#f0ebe0] rounded-2xl border border-[#e9e0d0] bg-white">
+            {filteredConversations.map((conversation) => {
+              const isSelected = selectedConversation === conversation.id && !pendingCounterpart;
+              return (
+                <button
+                  key={conversation.id}
+                  onClick={() => selectConversation(conversation.id)}
+                  className={`w-full px-4 py-4 text-left transition first:rounded-t-2xl last:rounded-b-2xl hover:bg-[#faf7f1] ${
+                    isSelected ? 'bg-[#f0f7f2]' : ''
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <AvatarCircle
+                      initials={conversation.user.initials}
+                      seed={conversation.user.username}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="truncate text-[15px] font-bold text-[#1a2b23]">
                           {conversation.user.name}
                         </p>
-                        {conversation.user.verified && (
-                          <Icon name="workspace_premium" className="text-base text-[var(--civic-gold)]" />
+                        {conversation.lastMessage.unread && (
+                          <span
+                            className="h-2 w-2 shrink-0 rounded-full bg-[#0a6a3b]"
+                            aria-label="Unread"
+                          />
                         )}
                       </div>
-                      <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--civic-muted)]">
-                        {conversation.user.office || conversation.user.username}
+                      <p className="mt-0.5 truncate text-[13px] text-[#8a938e]">
+                        {conversation.user.username} · {conversation.lastMessage.timestamp}
+                      </p>
+                      <p className="mt-1 line-clamp-2 text-sm leading-6 text-[#5b6660]">
+                        {conversation.lastMessage.text}
                       </p>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <span className="text-[11px] font-bold text-[var(--civic-muted)]">
-                        {conversation.lastMessage.timestamp}
-                      </span>
-                      {conversation.lastMessage.unread && (
-                        <span className="size-2 rounded-full bg-[var(--civic-primary)]" />
-                      )}
-                    </div>
                   </div>
-
-                  <p className="mt-3 text-sm font-bold text-[var(--civic-text)]">
-                    {conversation.messageCount} message{conversation.messageCount === 1 ? '' : 's'}
-                  </p>
-                  <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--civic-gold)]">
-                    {conversation.status}
-                  </p>
-                  <p className="mt-2 line-clamp-2 text-sm leading-6 text-[var(--civic-muted)]">
-                    {conversation.lastMessage.text}
-                  </p>
-                </div>
-              </div>
-            </button>
-          );
-        })}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {!loading && !error && !filteredConversations.length && (
-          <div className={`${mobile ? 'civic-section' : 'px-5 py-10'} text-center`}>
-            <Icon name="mail" className="mx-auto mb-4 text-5xl text-[var(--civic-muted)]" />
-            <p className="text-lg font-bold text-[var(--civic-text)]">
+          <div className="rounded-2xl border border-[#e9e0d0] bg-white px-5 py-12 text-center">
+            <p className="font-serif text-xl text-[#1a2b23]">
               {conversations.length ? 'No messages found' : 'No conversations yet'}
             </p>
-            <p className="mt-2 text-sm text-[var(--civic-muted)]">
+            <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-[#8a938e]">
               {conversations.length
                 ? 'Try a different search phrase.'
                 : 'Start a new conversation to message a citizen or official.'}
@@ -468,60 +461,57 @@ export default function MessagesPage() {
 
   const renderThreadPane = (mobile = false) =>
     selectedConv ? (
-      <div className="flex min-h-full flex-col">
-        <div
-          className={`${mobile ? 'sticky top-0 z-10' : 'sticky top-0 z-20'} border-b px-4 py-4 lg:px-8`}
-          style={{ borderColor: 'var(--civic-border)', background: 'var(--civic-surface-soft)' }}
-        >
+      <div className="flex min-h-full flex-col overflow-hidden rounded-2xl border border-[#e9e0d0] bg-white">
+        <div className="border-b border-[#f0ebe0] bg-white px-4 py-4 lg:px-6">
           <div className="flex items-center justify-between gap-4">
             <div className="flex min-w-0 items-center gap-3">
               {mobile && (
                 <button
                   onClick={() => setMobileView('list')}
-                  className="flex size-10 shrink-0 items-center justify-center rounded-full"
-                  style={{ background: 'var(--civic-surface)', color: 'var(--civic-text)', boxShadow: 'var(--civic-shadow-soft)' }}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#e9e0d0] bg-white text-[#1a2b23]"
+                  aria-label="Back to conversations"
                 >
                   <Icon name="arrow_back" className="text-xl" />
                 </button>
               )}
 
-              <AvatarCircle initials={selectedConv.user.initials} size="size-12" />
+              <AvatarCircle
+                initials={selectedConv.user.initials}
+                seed={selectedConv.user.username}
+                size="h-12 w-12"
+              />
 
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="truncate text-lg font-bold tracking-[-0.01em] text-[var(--civic-text)]">
+                  <h2 className="truncate font-serif text-lg text-[#1a2b23]">
                     {selectedConv.user.name}
                   </h2>
                   {selectedConv.user.verified && (
-                    <span
-                      className="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em]"
-                      style={{ background: 'rgba(212,165,64,0.12)', color: 'var(--civic-gold)', boxShadow: 'inset 0 0 0 1px rgba(212,165,64,0.2)' }}
-                    >
+                    <span className="rounded-full bg-[#e3f2e7] px-2.5 py-0.5 text-[11px] font-bold text-[#0a6a3b]">
                       Verified
                     </span>
                   )}
                 </div>
-                <p className="mt-1 text-sm text-[var(--civic-muted)]">{selectedConv.user.username}</p>
-                <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--civic-gold)]">
-                  {selectedConv.status}
+                <p className="mt-0.5 truncate text-[13px] text-[#8a938e]">
+                  {selectedConv.user.username}
                 </p>
               </div>
             </div>
 
-            <button className="civic-icon-button size-10" aria-label="Conversation options">
+            <button
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#8a938e] transition hover:bg-[#faf7f1] hover:text-[#1a2b23]"
+              aria-label="Conversation options"
+            >
               <Icon name="more_horiz" className="text-xl" />
             </button>
           </div>
         </div>
 
-        <div
-          className="flex-1 px-4 py-6 lg:px-8"
-          style={{ background: 'linear-gradient(180deg, var(--civic-bg) 0%, var(--civic-surface-soft) 100%)' }}
-        >
-          <div className="w-full space-y-5">
+        <div className="flex-1 bg-[#faf7f1] px-4 py-6 lg:px-6">
+          <div className="w-full space-y-4">
             {currentMessages.length === 0 && (
-              <p className="py-10 text-center text-sm text-[var(--civic-muted)]">
-                Say hello — your first message starts this conversation.
+              <p className="py-10 text-center text-sm text-[#8a938e]">
+                Say hello to start this conversation.
               </p>
             )}
             {currentMessages.map((message) => (
@@ -530,23 +520,17 @@ export default function MessagesPage() {
                 className={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className="w-full max-w-[840px] rounded-[20px] px-5 py-4"
-                  style={{
-                    background:
-                      message.sender === 'me'
-                        ? 'linear-gradient(135deg, var(--civic-primary) 0%, var(--civic-primary-deep) 100%)'
-                        : 'var(--civic-surface)',
-                    color: message.sender === 'me' ? 'var(--civic-primary-contrast)' : 'var(--civic-text)',
-                    boxShadow:
-                      message.sender === 'me'
-                        ? '0 18px 34px rgba(10,106,59,0.16)'
-                        : 'var(--civic-shadow-soft)',
-                  }}
+                  className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                    message.sender === 'me'
+                      ? 'rounded-br-md bg-[#0a6a3b] text-white'
+                      : 'rounded-bl-md border border-[#e9e0d0] bg-white text-[#1a2b23]'
+                  }`}
                 >
-                  <p className="text-[15px] leading-7">{message.text}</p>
+                  <p className="text-[14px] leading-6">{message.text}</p>
                   <p
-                    className="mt-2 text-[11px] font-bold uppercase tracking-[0.14em]"
-                    style={{ color: message.sender === 'me' ? 'rgba(255,255,255,0.74)' : 'var(--civic-muted)' }}
+                    className={`mt-1 text-[12px] ${
+                      message.sender === 'me' ? 'text-white/70' : 'text-[#8a938e]'
+                    }`}
                   >
                     {message.timestamp}
                   </p>
@@ -557,12 +541,12 @@ export default function MessagesPage() {
         </div>
 
         {error && !loading && (
-          <p className="border-t px-4 py-2 text-center text-xs text-[var(--civic-danger)]" style={{ borderColor: 'var(--civic-border)', background: 'var(--civic-surface)' }}>
+          <p className="border-t border-[#f0ebe0] bg-white px-4 py-2 text-center text-xs text-red-700">
             {error}
           </p>
         )}
 
-        <div className="border-t px-4 py-4 lg:px-8" style={{ borderColor: 'var(--civic-border)', background: 'var(--civic-surface)' }}>
+        <div className="border-t border-[#f0ebe0] bg-white px-4 py-4 lg:px-6">
           <div className="flex w-full items-end gap-3">
             <textarea
               value={messageText}
@@ -573,20 +557,15 @@ export default function MessagesPage() {
                   handleSendMessage();
                 }
               }}
-              placeholder="Write a reply..."
+              placeholder="Write a reply"
               rows={1}
-              className="max-h-40 min-h-[50px] flex-1 resize-y rounded-[18px] bg-transparent px-4 py-3 text-sm leading-6 text-[var(--civic-text)] placeholder:text-[var(--civic-muted)] outline-none"
-              style={{ background: 'var(--civic-surface-strong)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}
+              className="max-h-40 min-h-[50px] flex-1 resize-y rounded-2xl border border-[#e9e0d0] bg-white px-4 py-3 text-sm leading-6 text-[#1a2b23] placeholder:text-[#8a938e] outline-none focus:border-[#0a6a3b]"
             />
             <button
               onClick={handleSendMessage}
               disabled={!messageText.trim() || sending}
               aria-label="Send message"
-              className="flex size-12 items-center justify-center rounded-full transition hover:brightness-105 disabled:opacity-45"
-              style={{
-                background: 'linear-gradient(135deg, var(--civic-primary) 0%, var(--civic-primary-deep) 100%)',
-                color: 'var(--civic-primary-contrast)',
-              }}
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#0a6a3b] text-white transition hover:brightness-105 disabled:opacity-45"
             >
               <Icon name="send" className="text-lg" />
             </button>
@@ -594,33 +573,25 @@ export default function MessagesPage() {
         </div>
       </div>
     ) : (
-      <div
-        className="flex min-h-[60vh] items-center justify-center"
-        style={{ background: 'linear-gradient(180deg, var(--civic-bg) 0%, var(--civic-bg-deep) 100%)', color: 'var(--civic-muted)' }}
-      >
-        <div className="text-center">
-          <Icon name="mail" className="mx-auto mb-4 text-6xl text-[var(--civic-muted)]" />
-          <p className="text-lg font-bold text-[var(--civic-text)]">Select a message</p>
-          <p className="mt-2 text-sm">Open a thread to continue.</p>
+      <div className="flex min-h-[60vh] items-center justify-center rounded-2xl border border-[#e9e0d0] bg-white">
+        <div className="px-6 py-12 text-center">
+          <p className="font-serif text-xl text-[#1a2b23]">No conversations yet</p>
+          <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-[#8a938e]">
+            Start a new conversation to message a citizen or official.
+          </p>
         </div>
       </div>
     );
 
   return (
     <StandardLayout showRightSidebar={false}>
-      <div
-        className="min-h-screen"
-        style={{ background: 'linear-gradient(180deg, var(--civic-bg) 0%, var(--civic-bg-deep) 100%)' }}
-      >
+      <div className="min-h-screen bg-[#f6f1e7]">
         <div className="px-4 py-6 lg:hidden">
           {mobileView === 'list' ? renderConversationList(true) : renderThreadPane(true)}
         </div>
 
-        <div className="hidden lg:grid lg:min-h-screen lg:grid-cols-[380px_minmax(0,1fr)]">
-          <div
-            className="sticky top-0 h-screen overflow-y-auto civic-scrollbar"
-            style={{ borderRight: '1px solid var(--civic-border)', background: 'var(--civic-surface-soft)' }}
-          >
+        <div className="hidden lg:grid lg:min-h-screen lg:grid-cols-[380px_minmax(0,1fr)] lg:gap-6 lg:p-6">
+          <div className="sticky top-0 h-[calc(100vh-3rem)] overflow-y-auto civic-scrollbar">
             {renderConversationList()}
           </div>
           {renderThreadPane()}

@@ -1,28 +1,20 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '../components/common';
 import StandardLayout from '../layouts/StandardLayout';
-import {
-  DEFAULT_NOTIFICATION_STATE,
-  getUnreadCount,
-  readNotificationState,
-  writeNotificationState,
-} from '../utils/notificationState';
+import { notificationsService } from '../services/notifications';
+import type { Notification as ApiNotification } from '../types';
 
 type NotificationFilter = 'all' | 'official' | 'mentions';
 
 interface NotificationRecord {
   id: string;
-  type: 'official_response' | 'status_update' | 'mention' | 'community';
+  type: 'official_response' | 'mention' | 'community';
   title: string;
   body: string;
   timestamp: string;
   read: boolean;
   actionUrl?: string;
-  actor?: {
-    name: string;
-    avatar?: string;
-  };
 }
 
 const notificationFilters: Array<{ id: NotificationFilter; label: string }> = [
@@ -31,92 +23,93 @@ const notificationFilters: Array<{ id: NotificationFilter; label: string }> = [
   { id: 'mentions', label: 'Mentions' },
 ];
 
-const initialNotifications: NotificationRecord[] = [
-  {
-    id: '1',
-    type: 'official_response',
-    title: 'Lagos State Ministry of Works replied to your report',
-    body: 'The drainage work at Ikorodu Road has been scheduled for review next quarter.',
-    timestamp: '2m ago',
-    read: false,
-    actionUrl: '/issue/1',
-  },
-  {
-    id: '2',
-    type: 'status_update',
-    title: 'Your account was verified',
-    body: 'Your account details have been confirmed. You can now post and send reports.',
-    timestamp: '1h ago',
-    read: false,
-    actionUrl: '/settings',
-  },
-  {
-    id: '3',
-    type: 'mention',
-    title: 'Amadi J. mentioned you',
-    body: '"@Citizen_Abuja would have useful insight on this road project."',
-    timestamp: '4h ago',
-    read: true,
-    actor: {
-      name: 'Amadi J.',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&h=120&fit=crop',
-    },
-    actionUrl: '/feed',
-  },
-  {
-    id: '4',
-    type: 'community',
-    title: 'A poll is closing soon',
-    body: 'The minimum wage discussion in your area closes in 2 hours.',
-    timestamp: 'Yesterday',
-    read: true,
-    actionUrl: '/feed',
-  },
-];
+function relativeTime(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return '';
+  const seconds = Math.max(0, Math.floor((Date.now() - then) / 1000));
+  if (seconds < 60) return 'Just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString();
+}
+
+function toRecord(item: ApiNotification): NotificationRecord {
+  const type: NotificationRecord['type'] =
+    item.notification_type === 'mention'
+      ? 'mention'
+      : item.actor_role === 'official'
+        ? 'official_response'
+        : 'community';
+  const actionUrl = item.issue
+    ? `/issue/${item.issue}`
+    : item.post
+      ? `/post/${item.post}`
+      : item.notification_type === 'message'
+        ? '/messages'
+        : undefined;
+  return {
+    id: String(item.id),
+    type,
+    title: item.title,
+    body: item.message,
+    timestamp: relativeTime(item.created_at),
+    read: item.is_read,
+    actionUrl,
+  };
+}
 
 export default function NotificationsPage() {
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState<NotificationFilter>('all');
-  const [notifications, setNotifications] = useState<NotificationRecord[]>(() =>
-    initialNotifications.map((item) => {
-      const stored = readNotificationState(DEFAULT_NOTIFICATION_STATE).find(
-        (storedItem) => storedItem.id === item.id,
-      );
+  const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-      return stored ? { ...item, read: stored.read } : item;
-    }),
-  );
+  const loadNotifications = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const items = await notificationsService.getNotifications();
+      setNotifications(items.map(toRecord));
+    } catch {
+      setError('We could not load your notifications. Check your connection and try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadNotifications();
+  }, []);
 
   const filteredNotifications = useMemo(() => {
     return notifications.filter((item) => {
-      if (activeFilter === 'official') {
-        return item.type === 'official_response' || item.type === 'status_update';
-      }
-      if (activeFilter === 'mentions') {
-        return item.type === 'mention';
-      }
+      if (activeFilter === 'official') return item.type === 'official_response';
+      if (activeFilter === 'mentions') return item.type === 'mention';
       return true;
     });
   }, [activeFilter, notifications]);
 
-  const unreadCount = getUnreadCount(notifications);
+  const unreadCount = notifications.filter((item) => !item.read).length;
 
-  const markAllAsRead = () => {
-    setNotifications((current) => {
-      const next = current.map((item) => ({ ...item, read: true }));
-      writeNotificationState(next);
-      return next;
-    });
+  const markAllAsRead = async () => {
+    try {
+      await notificationsService.markAllAsRead();
+      setNotifications((current) => current.map((item) => ({ ...item, read: true })));
+    } catch {
+      setError('We could not mark everything as read. Try again.');
+    }
   };
 
   const openNotification = (notification: NotificationRecord) => {
-    setNotifications((current) => {
-      const next = current.map((item) =>
-        item.id === notification.id ? { ...item, read: true } : item,
-      );
-      writeNotificationState(next);
-      return next;
-    });
+    setNotifications((current) =>
+      current.map((item) => (item.id === notification.id ? { ...item, read: true } : item)),
+    );
+    notificationsService.markAsRead(Number(notification.id)).catch(() => {});
 
     if (notification.actionUrl) {
       navigate(notification.actionUrl);
@@ -125,150 +118,154 @@ export default function NotificationsPage() {
 
   const getIcon = (type: NotificationRecord['type']) => {
     if (type === 'official_response') return 'account_balance';
-    if (type === 'status_update') return 'verified_user';
     if (type === 'mention') return 'alternate_email';
     return 'notifications';
   };
 
-  const getAccent = (type: NotificationRecord['type']) => {
-    if (type === 'official_response') return 'var(--civic-primary)';
-    if (type === 'status_update') return 'var(--civic-gold)';
-    return 'var(--civic-border-strong)';
-  };
+  const getOfficialTitle = (notification: NotificationRecord) =>
+    notification.type === 'official_response' ? `Verified reply — ${notification.title}` : notification.title;
 
   return (
     <StandardLayout showRightSidebar={false}>
-      <div
-        className="min-h-screen"
-        style={{ background: 'linear-gradient(180deg, var(--civic-surface-soft) 0%, var(--civic-bg) 100%)' }}
-      >
+      <div className="min-h-screen" style={{ background: 'var(--civic-bg)' }}>
         <div className="mx-auto max-w-[1400px] px-4 py-6 lg:px-8 lg:py-8">
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-            <section className="overflow-hidden rounded-[32px] border border-[var(--civic-border)] bg-[var(--civic-surface)] shadow-[0_30px_70px_-36px_rgba(0,0,0,0.28)]">
-              <header className="border-b border-[var(--civic-border)] px-5 py-5 lg:px-8">
-                <div className="flex flex-col gap-5">
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                      <p className="civic-label">Notifications</p>
-                      <h1 className="mt-3 font-display text-4xl tracking-[-0.02em] text-[var(--civic-text)]">Updates that need your attention</h1>
-                      <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--civic-muted)]">
-                        Follow replies, account changes, and mentions without losing the thread.
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={markAllAsRead}
-                      disabled={unreadCount === 0}
-                      className="inline-flex min-h-11 items-center justify-center rounded-full px-4 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--civic-primary)] transition disabled:opacity-45"
-                      style={{ background: 'var(--civic-surface-soft)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }}
-                    >
-                      Mark all as read
-                    </button>
+            <div className="min-w-0 space-y-5">
+              <section className="rounded-2xl border border-[var(--civic-border)] bg-[var(--civic-surface)] px-5 py-6 lg:px-7">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <h1 className="font-display text-4xl tracking-[-0.02em] text-[var(--civic-text)]">Updates that need your attention</h1>
+                    <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--civic-muted)]">
+                      Replies to your reports, mentions, and account changes — newest first.
+                    </p>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    {[
-                      ['Unread', unreadCount],
-                      ['Visible', filteredNotifications.length],
-                      ['Total', notifications.length],
-                    ].map(([label, value]) => (
-                      <div
-                        key={label as string}
-                        className="rounded-[22px] border border-[var(--civic-border)] bg-[var(--civic-surface-soft)] px-4 py-4"
-                      >
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--civic-muted)]">
-                          {label}
-                        </p>
-                        <p className="mt-2 font-display text-2xl tracking-[-0.02em] text-[var(--civic-text)]">
-                          {value as number}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
+                  <button
+                    onClick={markAllAsRead}
+                    disabled={unreadCount === 0}
+                    className="text-[13px] font-semibold text-[var(--civic-primary)] transition hover:underline disabled:no-underline disabled:opacity-45"
+                  >
+                    Mark all as read
+                  </button>
+                </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    {notificationFilters.map((filter) => (
+                <nav aria-label="Notification filters" className="mt-6 flex items-center gap-6 border-b border-[var(--civic-border)]">
+                  {notificationFilters.map((filter) => {
+                    const isActive = activeFilter === filter.id;
+                    return (
                       <button
                         key={filter.id}
                         onClick={() => setActiveFilter(filter.id)}
-                        className={`px-4 py-2 text-[11px] font-bold uppercase tracking-[0.14em] transition ${
-                          activeFilter === filter.id
-                            ? 'rounded-full text-[var(--civic-text)]'
-                            : 'text-[var(--civic-muted)] hover:text-[var(--civic-text)]'
+                        aria-current={isActive ? 'page' : undefined}
+                        className={`-mb-px pb-2 text-[13px] font-semibold transition ${
+                          isActive
+                            ? 'border-b-2 border-[var(--civic-primary)] text-[var(--civic-text)]'
+                            : 'border-b-2 border-transparent text-[var(--civic-muted)] hover:text-[var(--civic-text)]'
                         }`}
-                        style={
-                          activeFilter === filter.id
-                            ? { background: 'var(--civic-surface-soft)', boxShadow: 'inset 0 0 0 1px var(--civic-border)' }
-                            : undefined
-                        }
                       >
                         {filter.label}
                       </button>
+                    );
+                  })}
+                </nav>
+              </section>
+
+              <div className="grid gap-3 sm:grid-cols-3">
+                {[
+                  ['Unread', unreadCount],
+                  ['Showing', filteredNotifications.length],
+                  ['Total', notifications.length],
+                ].map(([label, value]) => (
+                  <div
+                    key={label as string}
+                    className="rounded-2xl border border-[var(--civic-border)] bg-[var(--civic-surface)] px-4 py-4"
+                  >
+                    <p className="text-xs text-[var(--civic-muted)]">{label}</p>
+                    <p className="mt-1 font-display text-2xl tracking-[-0.02em] text-[var(--civic-text)]">
+                      {value as number}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-3">
+                {error && (
+                  <div className="rounded-2xl border border-[rgba(218,92,78,0.25)] bg-[var(--civic-surface)] px-6 py-8 text-center">
+                    <p className="text-lg font-bold text-[var(--civic-text)]">Could not load notifications</p>
+                    <p className="mt-2 text-sm text-[var(--civic-muted)]">{error}</p>
+                    <button
+                      onClick={loadNotifications}
+                      className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full px-5 text-[13px] font-semibold text-[var(--civic-primary-contrast)]"
+                      style={{ background: 'var(--civic-primary)' }}
+                    >
+                      Try again
+                    </button>
+                  </div>
+                )}
+
+                {!error && isLoading && (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((card) => (
+                      <div key={card} className="h-28 animate-pulse rounded-2xl border border-[var(--civic-border)] bg-[var(--civic-surface)]" />
                     ))}
                   </div>
-                </div>
-              </header>
+                )}
 
-              <div className="space-y-4 px-5 py-5 lg:px-8 lg:py-8">
-                {filteredNotifications.length ? (
-                  filteredNotifications.map((notification) => (
-                    <article
-                      key={notification.id}
-                      onClick={() => openNotification(notification)}
-                      className="cursor-pointer rounded-[24px] border border-[var(--civic-border)] px-5 py-5 transition hover:-translate-y-0.5"
-                      style={{
-                        background: notification.read ? 'var(--civic-surface-soft)' : 'var(--civic-surface)',
-                        boxShadow: notification.read
-                          ? 'var(--civic-shadow-soft)'
-                          : '0 18px 34px rgba(10,106,59,0.08)',
-                      }}
-                    >
-                      <div className="flex gap-4">
-                        <div
-                          className="mt-1 h-auto w-1 shrink-0 rounded-full"
-                          style={{ background: getAccent(notification.type) }}
-                        />
-
-                        {notification.actor?.avatar ? (
-                          <img
-                            src={notification.actor.avatar}
-                            alt={notification.actor.name}
-                            className="size-11 rounded-md object-cover"
-                          />
-                        ) : (
+                {!error && !isLoading && filteredNotifications.length > 0 && (
+                  filteredNotifications.map((notification) => {
+                    const isOfficial = notification.type === 'official_response';
+                    return (
+                      <article
+                        key={notification.id}
+                        onClick={() => openNotification(notification)}
+                        className="cursor-pointer rounded-2xl border border-[var(--civic-border)] bg-[var(--civic-surface)] px-5 py-5 transition hover:-translate-y-0.5"
+                        style={
+                          isOfficial
+                            ? { background: 'rgba(10,106,59,.05)', borderLeft: '3px solid var(--civic-primary)' }
+                            : notification.read
+                              ? undefined
+                              : { borderLeft: '3px solid var(--civic-primary)' }
+                        }
+                      >
+                        <div className="flex gap-4">
                           <div
                             className="flex size-11 shrink-0 items-center justify-center rounded-md"
                             style={{ background: 'var(--civic-surface-strong)', color: 'var(--civic-primary)' }}
                           >
                             <Icon name={getIcon(notification.type)} className="text-[1.1rem]" />
                           </div>
-                        )}
 
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <p className="text-base font-bold text-[var(--civic-text)]">{notification.title}</p>
-                            <div className="flex items-center gap-2">
-                              {!notification.read && <span className="size-2 rounded-full bg-[var(--civic-primary)]" />}
-                              <span className="text-xs text-[var(--civic-muted)]">{notification.timestamp}</span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <p className="text-base font-bold text-[var(--civic-text)]">{getOfficialTitle(notification)}</p>
+                              <div className="flex items-center gap-2">
+                                {!notification.read && <span className="size-2 rounded-full bg-[var(--civic-primary)]" />}
+                                <span className="text-xs text-[var(--civic-muted)]">{notification.timestamp}</span>
+                              </div>
                             </div>
-                          </div>
 
-                          <p className="mt-3 text-[15px] leading-7 text-[var(--civic-muted)]">{notification.body}</p>
+                            <p className="mt-2 text-[15px] leading-7 text-[var(--civic-muted)]">{notification.body}</p>
+                          </div>
                         </div>
-                      </div>
-                    </article>
-                  ))
-                ) : (
-                  <div
-                    className="rounded-[24px] border border-[var(--civic-border)] px-6 py-10 text-center"
-                    style={{ background: 'var(--civic-surface-soft)', boxShadow: 'var(--civic-shadow-soft)' }}
-                  >
-                    <p className="text-lg font-bold text-[var(--civic-text)]">No notifications here</p>
-                    <p className="mt-2 text-sm text-[var(--civic-muted)]">Try another tab or check again later.</p>
+                      </article>
+                    );
+                  })
+                )}
+
+                {!error && !isLoading && filteredNotifications.length === 0 && (
+                  <div className="rounded-2xl border border-[var(--civic-border)] bg-[var(--civic-surface)] px-6 py-10 text-center">
+                    <p className="text-lg font-bold text-[var(--civic-text)]">
+                      {notifications.length ? 'Nothing under this tab' : 'No notifications yet'}
+                    </p>
+                    <p className="mt-2 text-sm text-[var(--civic-muted)]">
+                      {notifications.length
+                        ? 'Try another tab.'
+                        : 'When an official replies to your report or someone mentions you, it lands here.'}
+                    </p>
                   </div>
                 )}
               </div>
-            </section>
+            </div>
 
             <aside className="space-y-4 xl:sticky xl:top-[96px] xl:self-start">
               <section className="rounded-[28px] border border-[var(--civic-border)] bg-[var(--civic-surface)] p-5 shadow-[0_24px_48px_-36px_rgba(22,33,51,0.28)]">
@@ -290,9 +287,9 @@ export default function NotificationsPage() {
               </section>
 
               <section className="rounded-[28px] border border-[var(--civic-border)] bg-[var(--civic-surface)] p-5 shadow-[0_24px_48px_-36px_rgba(22,33,51,0.28)]">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--civic-muted)]">About this page</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--civic-muted)]">What lands here</p>
                 <p className="mt-3 text-sm leading-7 text-[var(--civic-muted)]">
-                  Read official replies, community mentions, and system updates in one place without losing the trail.
+                  Official replies, mentions, and account changes collect here. Anything unread carries a green dot.
                 </p>
               </section>
             </aside>
