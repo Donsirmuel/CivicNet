@@ -1,31 +1,26 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Icon } from './';
 import {
-  DEFAULT_NOTIFICATION_STATE,
-  getNotificationEventName,
-  getUnreadCount,
-  readNotificationState,
-} from '../../utils/notificationState';
+  NOTIFICATIONS_CHANGED_EVENT,
+  notificationsService,
+} from '../../services/notifications';
 
 export default function MobileNav() {
   const location = useLocation();
-  const [unreadNotifications, setUnreadNotifications] = useState(() =>
-    getUnreadCount(readNotificationState(DEFAULT_NOTIFICATION_STATE)),
-  );
+  const navigate = useNavigate();
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   useEffect(() => {
     const syncUnreadCount = () => {
-      setUnreadNotifications(getUnreadCount(readNotificationState(DEFAULT_NOTIFICATION_STATE)));
+      notificationsService.getUnreadCount().then(setUnreadNotifications).catch(() => {});
     };
 
-    const eventName = getNotificationEventName();
-    window.addEventListener(eventName, syncUnreadCount as EventListener);
-    window.addEventListener('storage', syncUnreadCount);
+    syncUnreadCount();
+    window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, syncUnreadCount as EventListener);
 
     return () => {
-      window.removeEventListener(eventName, syncUnreadCount as EventListener);
-      window.removeEventListener('storage', syncUnreadCount);
+      window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, syncUnreadCount as EventListener);
     };
   }, []);
 
@@ -42,6 +37,17 @@ export default function MobileNav() {
   ];
 
   const isActive = (path: string) => location.pathname === path;
+
+  const handlePrimaryAction = () => {
+    if (location.pathname !== '/feed') {
+      navigate('/feed');
+      window.setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('civic:open-composer'));
+      }, 150);
+    } else {
+      window.dispatchEvent(new CustomEvent('civic:open-composer'));
+    }
+  };
 
   return (
     <nav
@@ -62,14 +68,15 @@ export default function MobileNav() {
           </Link>
         ))}
 
-        <Link
-          to="/feed"
+        <button
+          type="button"
+          onClick={handlePrimaryAction}
           className="relative mx-auto -mt-8 flex size-14 items-center justify-center rounded-[18px] text-[var(--civic-primary-contrast)] shadow-[0_22px_40px_rgba(10,106,59,0.24)]"
           style={{ background: 'linear-gradient(135deg, var(--civic-primary) 0%, var(--civic-primary-deep) 100%)' }}
-          aria-label="Create new post"
+          aria-label="Report an issue"
         >
           <Icon name="add" className="text-[1.7rem]" />
-        </Link>
+        </button>
 
         {edgeItems.slice(2).map((item) => (
           <Link

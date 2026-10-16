@@ -3,16 +3,42 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Icon, Logo } from './';
 import { authService } from '../../services';
 
+const AVATAR_COLORS = ['#a87b5a', '#0a6a3b', '#31572c', '#d4a540'];
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  const first = parts[0] ? parts[0][0] : '';
+  const second = parts.length > 1 && parts[parts.length - 1] ? parts[parts.length - 1][0] : '';
+  return `${first}${second}`.toUpperCase() || '?';
+}
+
+function getAvatarColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i += 1) {
+    hash = (hash + name.charCodeAt(i)) % 2147483647;
+  }
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length] ?? AVATAR_COLORS[0] ?? '#0a6a3b';
+}
+
 export default function MobileHeader() {
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
+  const currentUser = authService.getCurrentUser();
+  const mobileName =
+    currentUser
+      ? [currentUser.first_name, currentUser.last_name].filter(Boolean).join(' ').trim() ||
+        currentUser.username ||
+        'Citizen'
+      : 'Citizen';
+  const mobileAvatar = currentUser?.avatar || currentUser?.profile_picture;
 
   const menuItems = [
     { icon: 'home', label: 'Home', path: '/feed' },
     { icon: 'mail', label: 'Messages', path: '/messages' },
     { icon: 'notifications', label: 'Notifications', path: '/notifications' },
     { icon: 'settings', label: 'Settings', path: '/settings' },
-    { icon: 'logout', label: 'Log Out', path: '/login', logout: true },
+    { icon: 'logout', label: 'Log out', path: '/login', logout: true },
   ];
 
   return (
@@ -63,14 +89,24 @@ export default function MobileHeader() {
                 className="flex items-center gap-3 border-b px-4 py-4"
                 style={{ borderColor: 'var(--civic-border)' }}
               >
-                <img
-                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop"
-                  alt="Profile"
-                  className="size-12 rounded-md object-cover"
-                />
+                {mobileAvatar ? (
+                  <img
+                    src={mobileAvatar}
+                    alt="Profile"
+                    className="size-12 rounded-md object-cover"
+                  />
+                ) : (
+                  <span
+                    className="flex size-12 shrink-0 items-center justify-center rounded-md text-[15px] font-bold text-white"
+                    style={{ background: getAvatarColor(mobileName) }}
+                    aria-hidden="true"
+                  >
+                    {getInitials(mobileName)}
+                  </span>
+                )}
                 <div>
                   <p className="text-sm font-bold text-[var(--civic-text)]">Profile</p>
-                  <p className="mt-1 text-[11px] text-[var(--civic-muted)]">@citizen</p>
+                  <p className="mt-1 text-[11px] text-[var(--civic-muted)]">@{currentUser?.username || 'citizen'}</p>
                 </div>
               </Link>
 

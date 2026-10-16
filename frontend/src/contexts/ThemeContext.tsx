@@ -1,80 +1,39 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext } from 'react';
 import type { ReactNode } from 'react';
 
-export type Theme = 'system' | 'light' | 'dark';
+// Deprecated: single Sovereign Paper palette, no toggle.
+// Kept as a no-op so old imports don't break.
+export type Theme = 'sovereign';
 
 interface ThemeContextType {
   theme: Theme;
-  effectiveTheme: 'light' | 'dark';
-  setTheme: (theme: Theme) => void;
+  effectiveTheme: 'light';
+  setTheme: (_theme: Theme) => void;
   toggleTheme: () => void;
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
-
-const STORAGE_KEY = 'theme';
-
-function getSystemTheme(): 'light' | 'dark' {
-  if (typeof window === 'undefined') return 'light';
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
-
-function applyTheme(theme: Theme) {
-  const root = document.documentElement;
-  const effectiveTheme = theme === 'system' ? getSystemTheme() : theme;
-  root.classList.toggle('dark', effectiveTheme === 'dark');
-  root.style.colorScheme = effectiveTheme;
-  root.dataset.themePreference = theme;
-}
-
-function readStoredTheme(): Theme {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored === 'light' || stored === 'dark' || stored === 'system') return stored;
-  return 'system';
-}
+const ThemeContext = createContext<ThemeContextType>({
+  theme: 'sovereign',
+  effectiveTheme: 'light',
+  setTheme: () => {},
+  toggleTheme: () => {},
+});
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(() => readStoredTheme());
-
-  useEffect(() => {
-    applyTheme(theme);
-    localStorage.setItem(STORAGE_KEY, theme);
-  }, [theme]);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = () => {
-      if (theme === 'system') {
-        applyTheme('system');
-      }
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [theme]);
-
-  const value = useMemo<ThemeContextType>(
-    () => ({
-      theme,
-      effectiveTheme: theme === 'system' ? getSystemTheme() : theme,
-      setTheme: (nextTheme: Theme) => setThemeState(nextTheme),
-      toggleTheme: () =>
-        setThemeState((current) => {
-          if (current === 'system') return 'dark';
-          return current === 'dark' ? 'light' : 'dark';
-        }),
-    }),
-    [theme],
-  );
-
+  if (typeof document !== 'undefined') {
+    document.documentElement.classList.remove('dark');
+    document.documentElement.style.colorScheme = 'light';
+  }
+  const value: ThemeContextType = {
+    theme: 'sovereign',
+    effectiveTheme: 'light',
+    setTheme: () => {},
+    toggleTheme: () => {},
+  };
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function useTheme() {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
-  return context;
+  return useContext(ThemeContext);
 }

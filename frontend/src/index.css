@@ -7,26 +7,29 @@
 
 @layer base {
   :root {
+    color-scheme: light;
     --radius: 1rem;
-    /* Lovable broadsheet palette - exact recreation source */
-    --cream: oklch(0.955 0.018 82);
-    --paper: oklch(0.92 0.02 82);
-    --ink: oklch(0.22 0.01 60);
-    --hairline: oklch(0.78 0.02 70);
+    /* Sovereign Paper — single palette, no dark/light toggle */
+    --cream: #fbf7f0;
+    --paper: #f3ebde;
+    --ink: #132033;
+    --deep: #0e2a1d;
+    --deep-soft: #143823;
+    --hairline: rgba(19, 32, 51, 0.12);
     --background: var(--cream);
     --foreground: var(--ink);
-    --card: oklch(0.985 0.01 82);
+    --card: #ffffff;
     --card-foreground: var(--ink);
-    --popover: oklch(0.985 0.01 82);
+    --popover: #ffffff;
     --popover-foreground: var(--ink);
-    --primary: oklch(0.36 0.09 155);
-    --primary-foreground: oklch(0.97 0.02 82);
+    --primary: #0a6a3b;
+    --primary-foreground: #ffffff;
     --secondary: var(--paper);
     --secondary-foreground: var(--ink);
-    --muted: var(--paper);
-    --muted-foreground: oklch(0.45 0.02 60);
-    --accent: oklch(0.83 0.13 85);
-    --accent-foreground: var(--ink);
+    --muted: #f4efe6;
+    --muted-foreground: #5b6b7d;
+    --accent: #d4a540;
+    --accent-foreground: #132033;
     --border: var(--hairline);
     --input: var(--hairline);
     --ring: var(--primary);
@@ -37,71 +40,27 @@
     --civic-surface-muted: #eef4ef;
     --civic-surface-inset: #f4efe6;
     --civic-surface-strong: #f6f7fb;
+    --civic-deep: #0e2a1d;
+    --civic-deep-soft: #143823;
+    --civic-on-deep: #f7faf8;
+    --civic-on-deep-muted: rgba(247, 250, 248, 0.72);
     --civic-border: rgba(19, 32, 51, 0.08);
     --civic-border-strong: rgba(19, 32, 51, 0.14);
     --civic-text: #132033;
     --civic-text-strong: #132033;
-    --civic-muted: #6a7a8d;
+    --civic-muted: #5b6b7d;
     --civic-primary: #0a6a3b;
     --civic-primary-deep: #005129;
     --civic-primary-contrast: #ffffff;
     --civic-primary-glow: rgba(10, 106, 59, 0.1);
     --civic-gold: #d4a540;
-    --civic-gold-soft: rgba(212, 165, 64, 0.12);
+    --civic-gold-soft: rgba(212, 165, 64, 0.16);
     --civic-danger: #da5c4e;
     --civic-shadow: 0 24px 56px rgba(22, 33, 51, 0.08);
     --civic-shadow-soft: 0 12px 28px rgba(22, 33, 51, 0.05);
     --civic-glass: rgba(255, 255, 255, 0.84);
     --civic-overlay: rgba(19, 32, 51, 0.24);
     --civic-ghost-border: rgba(19, 32, 51, 0.08);
-  }
-
-  .dark {
-    --cream: oklch(0.19 0.012 65);
-    --paper: oklch(0.24 0.013 65);
-    --ink: oklch(0.94 0.015 82);
-    --hairline: oklch(0.34 0.014 65);
-    --background: oklch(0.16 0.012 65);
-    --foreground: var(--ink);
-    --card: oklch(0.21 0.013 65);
-    --card-foreground: var(--ink);
-    --popover: oklch(0.21 0.013 65);
-    --popover-foreground: var(--ink);
-    --primary: oklch(0.7 0.14 155);
-    --primary-foreground: oklch(0.16 0.02 155);
-    --secondary: var(--paper);
-    --secondary-foreground: var(--ink);
-    --muted: oklch(0.26 0.013 65);
-    --muted-foreground: oklch(0.72 0.02 70);
-    --accent: oklch(0.82 0.15 85);
-    --accent-foreground: oklch(0.18 0.02 60);
-    --border: var(--hairline);
-    --input: var(--hairline);
-    --ring: var(--primary);
-    --civic-bg: #050706;
-    --civic-bg-deep: #0b0e0c;
-    --civic-surface: #101413;
-    --civic-surface-soft: #121816;
-    --civic-surface-muted: #0a0d0c;
-    --civic-surface-inset: #000000;
-    --civic-surface-strong: #171c19;
-    --civic-border: rgba(255, 255, 255, 0.06);
-    --civic-border-strong: rgba(255, 255, 255, 0.12);
-    --civic-text: #f7faf8;
-    --civic-text-strong: #ffffff;
-    --civic-muted: #8d9690;
-    --civic-primary: #84d99c;
-    --civic-primary-deep: #63c782;
-    --civic-primary-contrast: #06110b;
-    --civic-primary-glow: rgba(132, 217, 156, 0.08);
-    --civic-gold: #d7b059;
-    --civic-gold-soft: rgba(215, 176, 89, 0.12);
-    --civic-danger: #df6b5d;
-    --civic-shadow: 0 0 60px rgba(132, 217, 156, 0.08);
-    --civic-shadow-soft: 0 0 28px rgba(0, 0, 0, 0.34);
-    --civic-glass: rgba(16, 20, 19, 0.82);
-    --civic-overlay: rgba(0, 0, 0, 0.66);
-    --civic-ghost-border: rgba(255, 255, 255, 0.1);
   }
 
   * {
@@ -127,12 +86,6 @@
     text-rendering: optimizeLegibility;
   }
 
-  .dark body {
-    background:
-      radial-gradient(circle at top left, rgba(132, 217, 156, 0.08), transparent 22%),
-      linear-gradient(180deg, var(--civic-bg) 0%, var(--civic-bg-deep) 100%);
-  }
-
   #root {
     width: 100%;
     min-height: 100vh;
@@ -146,8 +99,8 @@
   }
 
   ::selection {
-    background: rgba(132, 217, 156, 0.22);
-    color: #06110b;
+    background: rgba(10, 106, 59, 0.18);
+    color: #0e2a1d;
   }
 
   a {
@@ -164,7 +117,7 @@
   select:focus-visible,
   textarea:focus-visible,
   a:focus-visible {
-    outline: 2px solid rgba(132, 217, 156, 0.34);
+    outline: 2px solid rgba(10, 106, 59, 0.45);
     outline-offset: 2px;
   }
 
@@ -245,36 +198,15 @@
 
   .civic-toolbar-pill {
     @apply relative min-h-11 rounded-full pl-4 pr-10 text-sm font-semibold outline-none transition;
-    background: var(--civic-surface-strong);
-    color: var(--civic-text);
-    box-shadow: inset 0 0 0 1px var(--civic-ghost-border);
-  }
-
-  .light .civic-toolbar-pill,
-  :root .civic-toolbar-pill {
     background: var(--civic-surface);
+    color: var(--civic-text);
     box-shadow: inset 0 0 0 1px var(--civic-border);
-  }
-
-  .dark .civic-toolbar-pill {
-    background: var(--civic-surface-strong);
-    box-shadow: inset 0 0 0 1px var(--civic-ghost-border);
   }
 
   .civic-search-shell {
     @apply relative flex min-h-12 items-center overflow-hidden rounded-full transition;
-    background: var(--civic-surface-strong);
-    box-shadow: inset 0 0 0 1px var(--civic-ghost-border);
-  }
-
-  .light .civic-search-shell,
-  :root .civic-search-shell {
     background: var(--civic-surface);
     box-shadow: inset 0 0 0 1px var(--civic-border);
-  }
-
-  .dark .civic-search-shell {
-    background: var(--civic-surface-strong);
   }
 
   .civic-icon-button {
@@ -290,14 +222,8 @@
 
   .civic-ghost-button {
     @apply inline-flex items-center justify-center rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] transition;
-    background: var(--civic-surface-strong);
-    color: var(--civic-text);
-    box-shadow: inset 0 0 0 1px var(--civic-ghost-border);
-  }
-
-  .light .civic-ghost-button,
-  :root .civic-ghost-button {
     background: var(--civic-surface);
+    color: var(--civic-text);
     box-shadow: inset 0 0 0 1px var(--civic-border);
   }
 
@@ -384,36 +310,6 @@
     z-index: -1;
   }
 
-  .dark .civic-auth-hero::before {
-    background:
-      radial-gradient(circle at 18% 22%, rgba(132, 217, 156, 0.11), transparent 0 18%),
-      radial-gradient(circle at 82% 14%, rgba(132, 217, 156, 0.06), transparent 0 14%),
-      linear-gradient(135deg, rgba(132, 217, 156, 0.04) 0%, transparent 46%);
-  }
-
-  .dark .civic-auth-hero::after {
-    background: radial-gradient(circle, rgba(132, 217, 156, 0.12) 0%, rgba(132, 217, 156, 0.03) 40%, transparent 68%);
-  }
-
-  .civic-auth-grid {
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.8), transparent 85%);
-    opacity: 0.35;
-    z-index: -1;
-  }
-
-  .dark .civic-auth-grid {
-    background-image:
-      linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
-    opacity: 0.18;
-  }
-
   .civic-auth-rings {
     position: absolute;
     inset: 0;
@@ -425,13 +321,6 @@
     z-index: -1;
   }
 
-  .dark .civic-auth-rings {
-    background:
-      radial-gradient(circle at 22% 30%, transparent 0 11%, rgba(132, 217, 156, 0.08) 11.5%, transparent 12.5%),
-      radial-gradient(circle at 22% 30%, transparent 0 18%, rgba(132, 217, 156, 0.05) 18.5%, transparent 19.5%),
-      radial-gradient(circle at 22% 30%, transparent 0 26%, rgba(132, 217, 156, 0.04) 26.5%, transparent 27.5%);
-  }
-
   .civic-auth-beam {
     position: absolute;
     right: -10%;
@@ -441,10 +330,6 @@
     background: radial-gradient(circle, rgba(10, 106, 59, 0.12) 0%, rgba(10, 106, 59, 0.03) 38%, transparent 68%);
     filter: blur(8px);
     z-index: -1;
-  }
-
-  .dark .civic-auth-beam {
-    background: radial-gradient(circle, rgba(132, 217, 156, 0.12) 0%, rgba(132, 217, 156, 0.03) 38%, transparent 68%);
   }
 
   .civic-auth-float-card {
@@ -666,6 +551,22 @@
   .float-a { animation: float-a 5.5s ease-in-out infinite; }
   .float-b { animation: float-b 6.5s ease-in-out infinite; }
   .float-c { animation: float-c 7.2s ease-in-out infinite; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .float-a, .float-b, .float-c,
+    .animate-landing-float, .animate-tick, .animate-live {
+      animation: none;
+    }
+  }
+
+  .landing-deep {
+    background: linear-gradient(180deg, #0e2a1d 0%, #143823 100%);
+    color: #f7faf8;
+  }
+  .landing-gold {
+    background: #d4a540;
+    color: #132033;
+  }
 
   @keyframes tick-up {
     0%, 70%, 100% { transform: translateY(0); }
