@@ -38,7 +38,7 @@ export function Nav() {
                 to="/register"
                 className="cta-pill inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
               >
-                Sign Up
+                Sign up
               </Link>
             </>
           )}

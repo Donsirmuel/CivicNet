@@ -1,0 +1,9 @@
+export const SKIN = ['#6b4a35', '#8d6548', '#a87b5a', '#c49a7a'] as const;
+export const INK = '#132033';
+export const PAPER = '#fbf7f0';
+export const DEEP = '#0e2a1d';
+export const PRIMARY = '#0a6a3b';
+export const GOLD = '#d4a540';
+export const BLUE = '#7ba7bc';
+export const CLAY = '#da5c4e';
+export const HAIR = '#1a1a24';
