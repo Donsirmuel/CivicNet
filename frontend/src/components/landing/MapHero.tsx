@@ -73,7 +73,7 @@ export function MapHero() {
           <CheckCircle2 className="h-3 w-3 text-[#0a6a3b]" /> Verified reply
         </span>
         <div className="absolute bottom-28 right-8 w-44 rounded-2xl border border-[#132033]/12 bg-white/90 p-3 shadow-[0_18px_40px_-20px_rgba(14,42,29,0.35)] backdrop-blur xl:right-14">
-          <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#0a6a3b]">Day 12 · no reply</p>
+          <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#0a6a3b]">Example · Day 12 · no reply</p>
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#132033]/10">
             <div className="h-full w-2/3 rounded-full bg-gradient-to-r from-[#0a6a3b] to-[#d4a540]" />
           </div>
@@ -144,6 +144,9 @@ export function MapHero() {
               className="inline-flex max-w-full items-center gap-2 truncate rounded-full border border-[#132033]/12 bg-white/85 px-4 py-2 text-[13px] text-[#132033]/85 backdrop-blur"
             >
               <span className={`h-2 w-2 shrink-0 rounded-full ${DOT[live.status]}`} />
+              <span className="shrink-0 rounded-full bg-[#132033]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#132033]/60">
+                Example
+              </span>
               <span className="truncate">
                 <strong className="font-semibold">{live.lga} · {live.category}</strong>
                 <span className="text-[#132033]/65"> — “{live.excerpt}”</span>
@@ -157,9 +160,9 @@ export function MapHero() {
           transition={{ duration: 0.7, delay: 0.46, ease: 'easeOut' }}
           className="mx-auto mt-6 flex max-w-md items-center justify-center gap-5 border-t border-[#132033]/15 pt-5"
         >
-          <Stat value="Pilot" label="Phase" />
+          <Stat value="37" label="States" />
           <span className="h-8 w-px bg-[#132033]/15" />
-          <Stat value="Lagos" label="Wards" />
+          <Stat value="774" label="LGAs" />
           <span className="h-8 w-px bg-[#132033]/15" />
           <Stat value="Free" label="Forever" />
         </motion.div>

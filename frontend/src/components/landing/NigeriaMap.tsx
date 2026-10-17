@@ -261,7 +261,7 @@ export function NigeriaMap({ variant = 'hero', onPinClick, activeId, className }
         viewBox="0 0 800 600"
         className="h-auto w-full"
         role="img"
-        aria-label="Map of Nigeria showing recent civic cases"
+        aria-label="Map of Nigeria showing example civic cases"
       >
         <defs>
           <linearGradient id="nmapFill" x1="0" y1="0" x2="1" y2="1">
@@ -345,7 +345,7 @@ export function NigeriaMap({ variant = 'hero', onPinClick, activeId, className }
             <LegendDot color="bg-primary" label="Resolved" />
           </div>
           <div className="pointer-events-none absolute bottom-3 right-3 hidden gap-4 rounded-full border border-hairline/70 bg-card/85 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/70 backdrop-blur sm:flex">
-            <span>Recent reports across Nigeria</span>
+            <span>Example reports across Nigeria</span>
           </div>
         </>
       )}
