@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom';
-import { CommunityCluster } from '../illustrations';
 
 export function ClosingBand() {
   return (
     <section id="join" className="landing-gold relative">
       <div className="mx-auto max-w-[1400px] px-6 py-20 text-center md:px-10 md:py-28">
-        <div className="mx-auto w-fit">
-          <CommunityCluster className="float-b h-auto w-52 sm:w-64" />
+        <div aria-hidden className="float-b mx-auto flex w-fit items-end justify-center gap-2 sm:gap-3">
+          <img src="/illustrations/market-basket.svg" alt="" className="h-auto w-20 sm:w-28" />
+          <img src="/illustrations/walk-forward.svg" alt="" className="h-auto w-20 sm:w-28" />
+          <img src="/illustrations/citizen-phone.svg" alt="" className="h-auto w-20 sm:w-28" />
         </div>
         <p className="mt-6 text-[11px] font-bold uppercase tracking-[0.32em] text-[#132033]/70">
           Join CivicNet

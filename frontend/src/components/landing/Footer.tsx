@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { WalkFigure } from '../illustrations';
 
 export function Footer() {
   return (
@@ -8,7 +7,7 @@ export function Footer() {
         <div className="flex flex-wrap items-center justify-between gap-6 border-b border-white/15 pb-6">
           <p className="font-display flex items-center gap-3 text-2xl text-[#f7faf8]">
             <span aria-hidden="true" className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#d4a540]/20">
-              <WalkFigure className="h-8 w-8" />
+              <img src="/illustrations/stride.svg" alt="" className="h-8 w-8" />
             </span>
             Civic<span className="-ml-3 italic text-[#d4a540]">Net</span>
             <span className="text-[#d4a540]">.</span>

@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
 import { MessageSquarePlus, Route as RouteIcon, ShieldCheck } from 'lucide-react';
-import { OfficialFigure, ReporterFigure, RouteFigure } from '../illustrations';
 
 const STEPS = [
   {
@@ -8,21 +7,21 @@ const STEPS = [
     tag: 'Report',
     title: 'Say what is wrong',
     body: 'Describe the problem and mark where it is. Add a photo if you have one.',
-    Figure: ReporterFigure,
+    figure: '/illustrations/point-ground.svg',
   },
   {
     icon: RouteIcon,
     tag: 'Route',
     title: 'It moves to the right office',
     body: 'Your report climbs from your ward to your LGA — your local government area — then the state, then federal level if it is still not fixed. Every step shows on the report.',
-    Figure: RouteFigure,
+    figure: '/illustrations/stride.svg',
   },
   {
     icon: ShieldCheck,
     tag: 'Answer',
     title: 'An official answers on the record',
     body: 'Someone from the responsible office replies with their name and office attached. If nobody replies, you can see that too.',
-    Figure: OfficialFigure,
+    figure: '/illustrations/official.svg',
   },
 ];
 
@@ -47,7 +46,6 @@ export function HowItMoves() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {STEPS.map((s, i) => {
             const Icon = s.icon;
-            const Figure = s.Figure;
             return (
               <motion.div
                 key={s.tag}
@@ -61,7 +59,7 @@ export function HowItMoves() {
                   <span className="inline-flex items-center gap-1 rounded-full bg-[#d4a540]/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[#d4a540]">
                     Step {i + 1} · {s.tag}
                   </span>
-                  <Figure className="h-16 w-16 shrink-0 sm:h-20 sm:w-20" />
+                  <img src={s.figure} alt="" className="h-16 w-16 shrink-0 sm:h-20 sm:w-20" />
                 </div>
                 <div className="mt-2 flex items-center gap-2">
                   <Icon className="h-5 w-5 text-[#f7faf8]/50 transition-colors group-hover:text-[#d4a540]" />

@@ -3,12 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { NigeriaMap, PINS } from './NigeriaMap';
-import {
-  IllustrationWrap,
-  OfficialFigure,
-  ReporterFigure,
-  RouteFigure,
-} from '../illustrations';
+import { IllustrationWrap } from '../illustrations';
 
 const rise = {
   initial: { opacity: 0, y: 20 },
@@ -52,13 +47,13 @@ export function MapHero() {
       {/* side illustrations — what CivicNet stands for */}
       <div aria-hidden className="pointer-events-none absolute inset-y-0 left-0 z-[2] hidden w-[240px] lg:block xl:w-[300px]">
         <IllustrationWrap className="absolute left-6 top-24 w-32 xl:left-12 xl:w-40" float="a" label="Citizen reporting an issue">
-          <ReporterFigure className="h-auto w-full drop-shadow-[0_16px_24px_rgba(14,42,29,0.20)]" skin="#a87b5a" />
+          <img src="/illustrations/citizen-phone.svg" alt="" className="h-auto w-full drop-shadow-[0_16px_24px_rgba(14,42,29,0.20)]" />
         </IllustrationWrap>
         <span className="absolute left-6 top-[19rem] inline-flex items-center gap-1.5 rounded-full border border-[#132033]/15 bg-white/85 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#132033]/75 backdrop-blur xl:left-12">
           <span className="h-1.5 w-1.5 rounded-full bg-[#0a6a3b]" /> Citizen report
         </span>
         <IllustrationWrap className="absolute bottom-24 left-10 w-24 xl:left-16 xl:w-28" float="c" label="Escalation ladder">
-          <RouteFigure className="h-auto w-full opacity-90 drop-shadow-[0_12px_20px_rgba(14,42,29,0.16)]" />
+          <img src="/illustrations/raise-hand.svg" alt="" className="h-auto w-full opacity-90 drop-shadow-[0_12px_20px_rgba(14,42,29,0.16)]" />
         </IllustrationWrap>
         <span className="absolute bottom-[4.2rem] left-10 inline-flex items-center gap-1.5 rounded-full border border-[#132033]/15 bg-white/85 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#132033]/75 backdrop-blur xl:left-16">
           <span className="h-1.5 w-1.5 rounded-full bg-[#d4a540]" /> Ward → Federal
@@ -67,7 +62,7 @@ export function MapHero() {
 
       <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 z-[2] hidden w-[240px] lg:block xl:w-[300px]">
         <IllustrationWrap className="absolute right-6 top-20 w-32 xl:right-12 xl:w-40" float="b" label="Verified official reply">
-          <OfficialFigure className="h-auto w-full drop-shadow-[0_16px_24px_rgba(14,42,29,0.20)]" />
+          <img src="/illustrations/official.svg" alt="" className="h-auto w-full drop-shadow-[0_16px_24px_rgba(14,42,29,0.20)]" />
         </IllustrationWrap>
         <span className="absolute right-6 top-[18.2rem] inline-flex items-center gap-1.5 rounded-full border border-[#132033]/15 bg-white/85 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#132033]/75 backdrop-blur xl:right-12">
           <CheckCircle2 className="h-3 w-3 text-[#0a6a3b]" /> Verified reply
@@ -128,8 +123,8 @@ export function MapHero() {
 
         {/* mobile illustrations */}
         <div className="mt-8 flex items-center justify-center gap-8 lg:hidden">
-          <ReporterFigure className="float-a h-20 w-20" skin="#a87b5a" />
-          <OfficialFigure className="float-b h-20 w-20" />
+          <img src="/illustrations/citizen-phone.svg" alt="" className="float-a h-20 w-20" />
+          <img src="/illustrations/official.svg" alt="" className="float-b h-20 w-20" />
         </div>
 
         {/* live hotspot ticker */}
