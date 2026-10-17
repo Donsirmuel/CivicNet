@@ -11,7 +11,7 @@ const accessHighlights = [
 ];
 
 const registerHeroImage =
-  '/Register-hero.jfif';
+  '/signup-hero.webp';
 
 export default function RegisterPage() {
   const navigate = useNavigate();

@@ -11,7 +11,7 @@ const authStats = [
 ];
 
 const loginHeroImage =
-  '/Login-hero.jfif';
+  '/login-hero.webp';
 
 export default function LoginPage() {
   const navigate = useNavigate();
