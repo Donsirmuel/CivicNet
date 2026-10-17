@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button, Icon } from '../components/common';
 import StandardLayout from '../layouts/StandardLayout';
 import { usersService } from '../services';
@@ -7,8 +8,6 @@ interface SettingsState {
   fullName: string;
   username: string;
   email: string;
-  biometricAuth: boolean;
-  anonymousComments: boolean;
   legislativeAlerts: boolean;
   constituencyUpdates: boolean;
   civicMentions: boolean;
@@ -20,8 +19,6 @@ const defaultSettings: SettingsState = {
   fullName: '',
   username: '',
   email: '',
-  biometricAuth: true,
-  anonymousComments: false,
   legislativeAlerts: true,
   constituencyUpdates: false,
   civicMentions: true,
@@ -234,47 +231,46 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          {/* Privacy */}
+          {/* Reporting */}
           <section className="grid grid-cols-1 gap-6 border-b border-[var(--civic-border)] py-8 md:grid-cols-[280px_minmax(0,1fr)] md:gap-10 md:py-10">
             <div>
               <h2 className="font-display text-2xl tracking-[-0.01em] text-[var(--civic-text)]">
-                Privacy
+                Your name
               </h2>
               <p className="mt-2 text-sm leading-6 text-[var(--civic-muted)]">
-                Control who sees your name and how you sign in.
+                You decide, report by report, whether your name is shown.
               </p>
             </div>
-            <div className="divide-y divide-[var(--civic-border)]">
-              <div className="flex items-center justify-between gap-6 py-5 first:pt-0 last:pb-0">
-                <div>
-                  <p className="text-[15px] font-semibold text-[var(--civic-text)]">
-                    Hide my name in comments
-                  </p>
-                  <p className="mt-1 text-sm leading-6 text-[var(--civic-muted)]">
-                    Your name stays hidden in public comments. Your account stays verified.
-                  </p>
-                </div>
-                <ToggleSwitch
-                  label="Hide my name in comments"
-                  checked={formData.anonymousComments}
-                  onChange={() => updateField('anonymousComments', !formData.anonymousComments)}
-                />
-              </div>
-              <div className="flex items-center justify-between gap-6 py-5 first:pt-0 last:pb-0">
-                <div>
-                  <p className="text-[15px] font-semibold text-[var(--civic-text)]">
-                    Biometric login
-                  </p>
-                  <p className="mt-1 text-sm leading-6 text-[var(--civic-muted)]">
-                    Ask for fingerprint or face ID before sensitive actions.
-                  </p>
-                </div>
-                <ToggleSwitch
-                  label="Biometric login"
-                  checked={formData.biometricAuth}
-                  onChange={() => updateField('biometricAuth', !formData.biometricAuth)}
-                />
-              </div>
+            <div className="rounded-xl border border-[var(--civic-border)] bg-white p-5">
+              <p className="text-[15px] font-semibold text-[var(--civic-text)]">
+                Hiding your name on a report
+              </p>
+              <p className="mt-1 text-sm leading-6 text-[var(--civic-muted)]">
+                Every report and update has a &ldquo;Hide my name&rdquo; switch. When it is on, your name is not
+                shown publicly — officials can still reach you about it. This is a choice you make each time, so
+                there is nothing to set here.
+              </p>
+            </div>
+          </section>
+
+          {/* Official */}
+          <section className="grid grid-cols-1 gap-6 border-b border-[var(--civic-border)] py-8 md:grid-cols-[280px_minmax(0,1fr)] md:gap-10 md:py-10">
+            <div>
+              <h2 className="font-display text-2xl tracking-[-0.01em] text-[var(--civic-text)]">
+                Official account
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-[var(--civic-muted)]">
+                If you work for a ward, LGA or state office, you can ask to be verified.
+              </p>
+            </div>
+            <div>
+              <Link
+                to="/verify-office"
+                className="inline-flex items-center gap-2 rounded-full border border-[var(--civic-border-strong)] bg-white px-5 py-2.5 text-sm font-semibold text-[var(--civic-text)] transition hover:bg-[var(--civic-surface-soft)]"
+              >
+                Verify your office
+                <Icon name="arrow_forward" className="text-[18px]" />
+              </Link>
             </div>
           </section>
 
@@ -285,7 +281,8 @@ export default function SettingsPage() {
                 Alerts
               </h2>
               <p className="mt-2 text-sm leading-6 text-[var(--civic-muted)]">
-                Choose what you want to hear about.
+                Choose what you want to hear about. These are saved on this device only — email and
+                push delivery are not connected yet.
               </p>
             </div>
             <div>

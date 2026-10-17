@@ -5,18 +5,21 @@ import type{ Post } from '../components/issues/PostCard';
  * Convert backend Issue to frontend Post format
  */
 export const convertIssueToPost = (issue: Issue): Post => {
+  const isAnonymous = Boolean(issue.is_anonymous);
   const createdByRole = issue.created_by.role === 'official' ? 'official' : 'citizen';
   return {
     id: String(issue.id),
     title: issue.title,
     type: 'issue',
     author: {
-      id: String(issue.created_by.id),
-      name: `${issue.created_by.first_name} ${issue.created_by.last_name}`.trim() || issue.created_by.username,
-      username: `@${issue.created_by.username}`,
+      id: isAnonymous ? 'anonymous' : String(issue.created_by.id),
+      name: isAnonymous
+        ? 'Anonymous citizen'
+        : `${issue.created_by.first_name} ${issue.created_by.last_name}`.trim() || issue.created_by.username,
+      username: isAnonymous ? '@anonymous' : `@${issue.created_by.username}`,
       avatar: '', // Empty: PostCard renders initials avatar
-      verified: createdByRole === 'official',
-      role: createdByRole,
+      verified: !isAnonymous && createdByRole === 'official',
+      role: isAnonymous ? 'citizen' : createdByRole,
     },
     content: issue.description,
     image: issue.image_url,
@@ -26,6 +29,8 @@ export const convertIssueToPost = (issue: Issue): Post => {
     escalationLevel: issue.escalation_level,
     escalatedAt: issue.escalated_at,
     officialReply: deriveOfficialReply(issue),
+    isAnonymous,
+    hasOfficialReply: Boolean(issue.has_official_reply),
     stats: {
       comments: issue.comment_count || 0,
       shares: 0,
@@ -53,22 +58,26 @@ export const convertIssueToPost = (issue: Issue): Post => {
  * Convert backend Post to frontend Post format
  */
 export const convertBackendPostToPost = (backendPost: BackendPost): Post => {
+  const isAnonymous = Boolean(backendPost.is_anonymous);
   const authorRole = backendPost.author.role === 'official' ? 'official' : 'citizen';
   return {
     id: String(backendPost.id),
     type: 'post',
     author: {
-      id: String(backendPost.author.id),
-      name: `${backendPost.author.first_name} ${backendPost.author.last_name}`.trim() || backendPost.author.username,
-      username: `@${backendPost.author.username}`,
+      id: isAnonymous ? 'anonymous' : String(backendPost.author.id),
+      name: isAnonymous
+        ? 'Anonymous citizen'
+        : `${backendPost.author.first_name} ${backendPost.author.last_name}`.trim() || backendPost.author.username,
+      username: isAnonymous ? '@anonymous' : `@${backendPost.author.username}`,
       avatar: '', // Empty: PostCard renders initials avatar
-      verified: authorRole === 'official',
-      role: authorRole,
+      verified: !isAnonymous && authorRole === 'official',
+      role: isAnonymous ? 'citizen' : authorRole,
     },
     content: backendPost.content,
     image: backendPost.image_url,
     scope: 'local', // Default scope for posts
     timestamp: formatTime(new Date(backendPost.created_at)),
+    isAnonymous,
     stats: {
       comments: backendPost.comments || 0,
       shares: backendPost.shares || 0,

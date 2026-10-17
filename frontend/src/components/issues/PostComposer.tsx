@@ -38,7 +38,7 @@ const issueCategories: { value: IssueCategory; label: string; icon: string }[] =
 ];
 
 interface PostComposerProps {
-  onPostSubmit?: (content: string, scope: PostScope, image?: string) => void;
+  onPostSubmit?: (content: string, scope: PostScope, image?: string, isAnonymous?: boolean) => void;
   onIssueSubmit?: (data: {
     content: string;
     category: IssueCategory;
@@ -46,6 +46,7 @@ interface PostComposerProps {
     scope: PostScope;
     image?: string;
     responsibleOffice?: string;
+    isAnonymous?: boolean;
   }) => void;
 }
 
@@ -92,11 +93,12 @@ export default function PostComposer({ onPostSubmit, onIssueSubmit }: PostCompos
         scope,
         image: selectedImage || undefined,
         responsibleOffice: responsibleOffice.trim() || undefined,
+        isAnonymous: hideName,
       });
     }
 
     if (mode === 'post' && onPostSubmit) {
-      onPostSubmit(content, scope, selectedImage || undefined);
+      onPostSubmit(content, scope, selectedImage || undefined, hideName);
     }
 
     setContent('');
@@ -104,6 +106,7 @@ export default function PostComposer({ onPostSubmit, onIssueSubmit }: PostCompos
     setLocation(undefined);
     setResponsibleOffice('');
     setIssueCategory('infrastructure');
+    setHideName(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -184,7 +187,7 @@ export default function PostComposer({ onPostSubmit, onIssueSubmit }: PostCompos
           className="mt-4 flex min-h-[88px] w-full flex-col items-center justify-center gap-1 rounded-[16px] border border-dashed border-[var(--civic-border-strong)] text-[13px] font-medium text-[var(--civic-muted)] transition hover:text-[var(--civic-text)]"
         >
           <Icon name="image" className="text-[20px]" />
-          Add photo or video
+          Add a photo
         </button>
       )}
       <input
@@ -253,41 +256,34 @@ export default function PostComposer({ onPostSubmit, onIssueSubmit }: PostCompos
             <Icon name="image" className="text-[15px]" />
             Photo
           </button>
-          {[
-            { label: 'Video', icon: 'videocam' },
-            { label: 'Voice note', icon: 'mic' },
-            { label: 'Location', icon: 'location_on' },
-          ].map((item) => (
-            <span
-              key={item.label}
-              title="Coming soon"
-              aria-disabled="true"
-              className="inline-flex min-h-8 cursor-not-allowed items-center gap-1.5 rounded-full px-3 text-[12px] font-semibold text-[#0a6a3b] opacity-50"
-              style={{ background: 'rgba(10,106,59,.08)' }}
-            >
-              <Icon name={item.icon} className="text-[15px]" />
-              {item.label}
-            </span>
-          ))}
         </div>
 
-        <label className="inline-flex cursor-pointer items-center gap-2 text-[13px] font-medium text-[var(--civic-muted)]">
+        <button
+          type="button"
+          role="switch"
+          aria-checked={hideName}
+          onClick={() => setHideName((current) => !current)}
+          className="inline-flex items-center gap-2 text-[13px] font-medium text-[var(--civic-muted)]"
+        >
           Hide my name
-          <button
-            type="button"
-            role="switch"
-            aria-checked={hideName}
-            aria-label="Hide my name"
-            onClick={() => setHideName((current) => !current)}
+          <span
+            aria-hidden="true"
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${hideName ? 'bg-[#0a6a3b]' : 'bg-[var(--civic-surface-inset)]'}`}
             style={hideName ? undefined : { boxShadow: 'inset 0 0 0 1px var(--civic-border-strong)' }}
           >
             <span
               className={`inline-block size-5 transform rounded-full bg-white shadow transition ${hideName ? 'translate-x-5' : 'translate-x-0.5'}`}
             />
-          </button>
-        </label>
+          </span>
+        </button>
       </div>
+
+      {hideName && (
+        <p className="mt-2 text-[12px] text-[var(--civic-muted)]">
+          Your name will not be shown on this {mode === 'issue' ? 'report' : 'update'}. Officials can still
+          reach you about it.
+        </p>
+      )}
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <button

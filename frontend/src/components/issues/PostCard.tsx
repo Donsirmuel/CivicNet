@@ -39,6 +39,8 @@ export interface Post {
   };
   liked?: boolean;
   bookmarked?: boolean;
+  isAnonymous?: boolean;
+  hasOfficialReply?: boolean;
   issueStatus?: IssueStatus;
   issueCategory?: IssueCategory;
   location?: {

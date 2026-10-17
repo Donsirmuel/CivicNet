@@ -7,7 +7,7 @@ import { issuesService, postsService, profilesService, usersService } from '../s
 import { convertBackendPostToPost } from '../utils/dataMappers';
 import type { User } from '../types';
 
-type ProfileTab = 'posts' | 'replies' | 'media';
+type ProfileTab = 'posts';
 
 interface UserProfileDisplay extends Partial<User> {
   avatar?: string;
@@ -42,13 +42,18 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<UserProfileDisplay | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
-  const [ownIssues, setOwnIssues] = useState<{ status: string }[]>([]);
+  const [ownIssues, setOwnIssues] = useState<{ status: string; has_official_reply?: boolean }[]>([]);
   const [retryKey, setRetryKey] = useState(0);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [hasUploadedAvatar, setHasUploadedAvatar] = useState(false);
+  // The account's real role/verification, so we never claim "Verified" falsely.
+  const [accountProfile, setAccountProfile] = useState<{
+    role?: string;
+    is_verified?: boolean;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editFormData, setEditFormData] = useState({
     firstName: '',
@@ -64,6 +69,11 @@ export default function ProfilePage() {
         setError(null);
 
         const userData = await usersService.getCurrentUser();
+        // Fetch the profile too: role / is_verified live there, not on the user.
+        profilesService
+          .getCurrentProfile()
+          .then((profile) => setAccountProfile({ role: profile.role, is_verified: profile.is_verified }))
+          .catch(() => {});
         const fetchedPosts = await postsService.getPosts({ ordering: '-created_at' }).catch(() => []);
         const fetchedIssues = await issuesService.getIssues({ ordering: '-created_at' }).catch(() => []);
         const convertedPosts = fetchedPosts.map(convertBackendPostToPost);
@@ -110,10 +120,10 @@ export default function ProfilePage() {
   const joinedText = formatJoinedMonthYear(user?.date_joined);
 
   const issuesRaised = ownIssues.length;
-  const answered = ownIssues.filter(
-    (issue) => issue.status === 'resolved' || issue.status === 'closed',
-  ).length;
-  const supportGiven = posts.reduce((sum, post) => sum + post.stats.likes, 0);
+  // "Answered" means a verified official replied, not merely "resolved".
+  const answered = ownIssues.filter((issue) => issue.has_official_reply).length;
+  // Support this user's reports and updates have received.
+  const supportReceived = posts.reduce((sum, post) => sum + post.stats.likes, 0);
 
   const handleAvatarSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -237,8 +247,6 @@ export default function ProfilePage() {
 
   const tabs: Array<{ id: ProfileTab; label: string }> = [
     { id: 'posts', label: 'Posts' },
-    { id: 'replies', label: 'Replies' },
-    { id: 'media', label: 'Media' },
   ];
 
   const showUploadedAvatar = hasUploadedAvatar && !!avatarPreview;
@@ -403,8 +411,12 @@ export default function ProfilePage() {
 
             {/* Meta line */}
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              <span className="inline-flex items-center rounded-full bg-[#e3f2e7] px-3 py-1.5 text-[13px] font-semibold text-[#1d5c38]">
-                Citizen · Verified
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e3f2e7] px-3 py-1.5 text-[13px] font-semibold text-[#1d5c38]">
+                {accountProfile?.role === 'official'
+                  ? accountProfile.is_verified
+                    ? 'Official · Verified'
+                    : 'Official'
+                  : 'Citizen'}
               </span>
               <span className="text-[14px] text-[var(--civic-muted)]">
                 {locationText} · Joined {joinedText}
@@ -431,10 +443,10 @@ export default function ProfilePage() {
               </div>
               <div className="rounded-[16px] border border-[var(--civic-border)] bg-white px-5 py-4">
                 <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[var(--civic-muted)]">
-                  Support given
+                  Support received
                 </p>
                 <p className="mt-2 font-display text-[32px] leading-none text-[var(--civic-text)]">
-                  {supportGiven}
+                  {supportReceived}
                 </p>
               </div>
             </div>
@@ -491,24 +503,6 @@ export default function ProfilePage() {
                     </button>
                   </div>
                 )}
-              </div>
-            )}
-
-            {activeTab === 'replies' && (
-              <div className="rounded-[16px] border border-[var(--civic-border)] bg-white p-10 text-center">
-                <p className="font-display text-2xl text-[var(--civic-text)]">No replies yet</p>
-                <p className="mt-2 text-[14px] text-[var(--civic-muted)]">
-                  Replies and follow-ups will show here when they are posted.
-                </p>
-              </div>
-            )}
-
-            {activeTab === 'media' && (
-              <div className="rounded-[16px] border border-[var(--civic-border)] bg-white p-10 text-center">
-                <p className="font-display text-2xl text-[var(--civic-text)]">No media yet</p>
-                <p className="mt-2 text-[14px] text-[var(--civic-muted)]">
-                  Photos and videos you share will appear here.
-                </p>
               </div>
             )}
           </div>

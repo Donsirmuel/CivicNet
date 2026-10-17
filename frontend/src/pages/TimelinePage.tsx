@@ -7,7 +7,7 @@ import FeedRightRail from '../components/unified-feed/FeedRightRail';
 import { type CivicFeedFilters } from '../types';
 import ViewToolbar, { type FeedTab } from '../components/unified-feed/ViewToolbar';
 import StandardLayout from '../layouts/StandardLayout';
-import { issuesService, postsService } from '../services';
+import { issuesService, postsService, profilesService } from '../services';
 import { convertBackendPostToPost, convertIssueToPost } from '../utils/dataMappers';
 
 const defaultFilters: CivicFeedFilters = {
@@ -31,12 +31,12 @@ function timeToMs(timeStr: string) {
   if (timeStr === 'Just now' || timeStr === 'now') return Date.now();
   const num = parseInt(timeStr, 10);
   if (Number.isNaN(num)) return Date.now();
+  if (timeStr.includes('mo')) return Date.now() - num * 2592000000;
+  if (timeStr.includes('y')) return Date.now() - num * 31536000000;
   if (timeStr.includes('m')) return Date.now() - num * 60000;
   if (timeStr.includes('h')) return Date.now() - num * 3600000;
   if (timeStr.includes('d')) return Date.now() - num * 86400000;
   if (timeStr.includes('w')) return Date.now() - num * 604800000;
-  if (timeStr.includes('mo')) return Date.now() - num * 2592000000;
-  if (timeStr.includes('y')) return Date.now() - num * 31536000000;
   return Date.now();
 }
 
@@ -50,6 +50,8 @@ export default function TimelinePage() {
   const [activeTab, setActiveTab] = useState<FeedTab>('for-you');
   const [composerOpen, setComposerOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  // The area we compare against for the "Near me" tab (from the user's profile).
+  const [myArea, setMyArea] = useState<{ state?: string; lga?: string } | null>(null);
 
   useEffect(() => {
     const open = () => setComposerOpen(true);
@@ -75,7 +77,7 @@ export default function TimelinePage() {
     if (tab === 'for-you') {
       setFilters((current) => ({ ...current, scope: 'all', contentType: 'all' }));
     } else if (tab === 'near-me') {
-      setFilters((current) => ({ ...current, scope: 'local' }));
+      setFilters((current) => ({ ...current, scope: 'all', contentType: 'all' }));
     } else {
       setFilters((current) => ({ ...current, contentType: 'official' }));
     }
@@ -90,6 +92,12 @@ export default function TimelinePage() {
         issuesService.getIssues({ ordering: '-created_at' }).catch(() => []),
         postsService.getPosts({ ordering: '-created_at' }).catch(() => []),
       ]);
+
+      // The user's own area, used by the "Near me" tab. Best-effort.
+      profilesService
+        .getCurrentProfile()
+        .then((profile) => setMyArea({ state: profile.state, lga: profile.lga }))
+        .catch(() => {});
 
       const merged = [...issues.map(convertIssueToPost), ...fetchedPosts.map(convertBackendPostToPost)].sort(
         (a, b) => timeToMs(b.timestamp) - timeToMs(a.timestamp),
@@ -109,11 +117,23 @@ export default function TimelinePage() {
   }, []);
 
   const filteredPosts = useMemo(() => {
+    const nearState = myArea?.state?.trim().toLowerCase();
+    const nearLga = myArea?.lga?.trim().toLowerCase();
     const next = posts.filter((post) => {
       if (filters.scope !== 'all' && post.scope !== filters.scope) return false;
       if (filters.contentType === 'issue' && post.type !== 'issue') return false;
       if (filters.contentType === 'post' && post.type !== 'post') return false;
-      if (filters.contentType === 'official' && post.author.role !== 'official') return false;
+      // "Official replies" shows reports that actually received a reply from an
+      // official — not posts written by officials.
+      if (filters.contentType === 'official' && !post.hasOfficialReply) return false;
+      // "Near me" keeps reports in the user's own state, and their LGA when we
+      // know it. Reports nothing about their area are left out.
+      if (activeTab === 'near-me' && nearState) {
+        if (post.location?.state?.trim().toLowerCase() !== nearState) return false;
+        if (nearLga && post.location?.lga && post.location.lga.trim().toLowerCase() !== nearLga) {
+          return false;
+        }
+      }
       return true;
     });
 
@@ -124,7 +144,7 @@ export default function TimelinePage() {
       if (aScore !== bScore) return bScore - aScore;
       return timeToMs(b.timestamp) - timeToMs(a.timestamp);
     });
-  }, [filters.contentType, filters.scope, posts]);
+  }, [activeTab, filters.contentType, filters.scope, myArea, posts]);
 
   const handleLike = async (postId: string) => {
     const target = posts.find((post) => post.id === postId);
@@ -194,14 +214,18 @@ export default function TimelinePage() {
     );
 
     const url = `${window.location.origin}/${post.type === 'issue' ? 'issue' : 'post'}/${postId}`;
+    const text = `${post.title ? `${post.title} — ` : ''}${url}`;
+
     try {
       await navigator.clipboard.writeText(url);
-      setCopiedId(postId);
-      setTimeout(() => setCopiedId((current) => (current === postId ? null : current)), 2000);
-    } catch (err) {
-      console.error('Unable to copy share link:', err);
-      window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, '_blank', 'noopener,noreferrer');
+    } catch {
+      // Clipboard can be blocked; WhatsApp still carries the link.
     }
+    // WhatsApp is what people here actually use to pass things on, so make it
+    // the primary share channel (a copy of the link is kept on the clipboard).
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+    setCopiedId(postId);
+    setTimeout(() => setCopiedId((current) => (current === postId ? null : current)), 2000);
   };
 
   const handleBookmark = (postId: string) => {
@@ -210,19 +234,25 @@ export default function TimelinePage() {
     );
   };
 
-  const handlePostSubmit = async (content: string, scope: 'local' | 'state' | 'national', image?: string) => {
+  const handlePostSubmit = async (
+    content: string,
+    scope: 'local' | 'state' | 'national',
+    image?: string,
+    isAnonymous?: boolean,
+  ) => {
     try {
       const created = await postsService.createPost({
         content,
         scope,
         image_url: image,
+        is_anonymous: isAnonymous,
       });
       const newPost = convertBackendPostToPost(created);
       setPosts((current) => [newPost, ...current]);
       setComposerOpen(false);
     } catch (err) {
       console.error('Failed to create post:', err);
-      alert('We could not publish that post yet. Please try again.');
+      setError('We could not publish that update yet. Please try again.');
     }
   };
 
@@ -233,6 +263,7 @@ export default function TimelinePage() {
     scope: 'local' | 'state' | 'national';
     image?: string;
     responsibleOffice?: string;
+    isAnonymous?: boolean;
   }) => {
     try {
       const description = data.responsibleOffice
@@ -248,6 +279,7 @@ export default function TimelinePage() {
         scope: data.scope,
         priority: 'medium',
         image_url: data.image,
+        is_anonymous: data.isAnonymous,
       });
 
       const newIssue = convertIssueToPost(created);
@@ -255,7 +287,7 @@ export default function TimelinePage() {
       setComposerOpen(false);
     } catch (err) {
       console.error('Failed to create issue:', err);
-      alert('We could not submit that report yet. Please try again.');
+      setError('We could not submit that report yet. Please try again.');
     }
   };
 
@@ -293,6 +325,17 @@ export default function TimelinePage() {
           onTabChange={handleTabChange}
         />
         </div>
+
+        {activeTab === 'near-me' && !myArea?.state && (
+          <div className="px-4 pt-3 lg:px-8">
+            <div className="mx-auto max-w-[760px]">
+              <p className="rounded-[16px] border border-[var(--civic-border)] bg-[var(--civic-surface)] px-4 py-3 text-[13px] text-[var(--civic-muted)]">
+                Add your location in your profile to see reports near you. For now we cannot tell which
+                reports are close.
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="px-4 pt-3 lg:px-8">
           <div className="mx-auto max-w-[760px]">

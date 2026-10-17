@@ -94,6 +94,7 @@ export const issuesService = {
     scope: string;
     priority?: string;
     image_url?: string;
+    is_anonymous?: boolean;
   }): Promise<Issue> => {
     try {
       const response = await apiClient.post<Issue>('issues/', data);

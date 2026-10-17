@@ -77,6 +77,7 @@ export const postsService = {
     content: string;
     image_url?: string;
     scope?: string;
+    is_anonymous?: boolean;
   }): Promise<Post> => {
     try {
       const response = await apiClient.post<Post>('posts/', data);

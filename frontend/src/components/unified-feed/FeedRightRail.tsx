@@ -50,8 +50,12 @@ export default function FeedRightRail({ posts }: FeedRightRailProps) {
         ) : (
           <div className="mt-3 space-y-1.5">
             <p className="text-sm font-semibold text-[var(--civic-text)]">{wardName}</p>
-            <p className="text-sm text-[var(--civic-muted)]">{openIssues} open issues</p>
-            <p className="text-sm text-[var(--civic-muted)]">{answeredThisMonth} answered in this feed</p>
+            <p className="text-sm text-[var(--civic-muted)]">
+              {openIssues} open {openIssues === 1 ? 'issue' : 'issues'}
+            </p>
+            <p className="text-sm text-[var(--civic-muted)]">
+              {answeredThisMonth} answered in this feed
+            </p>
           </div>
         )}
       </section>

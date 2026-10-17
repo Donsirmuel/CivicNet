@@ -24,12 +24,12 @@ function timeToMs(timeStr: string) {
   if (timeStr === 'Just now' || timeStr === 'now') return Date.now();
   const num = parseInt(timeStr, 10);
   if (Number.isNaN(num)) return Date.now();
+  if (timeStr.includes('mo')) return Date.now() - num * 2592000000;
+  if (timeStr.includes('y')) return Date.now() - num * 31536000000;
   if (timeStr.includes('m')) return Date.now() - num * 60000;
   if (timeStr.includes('h')) return Date.now() - num * 3600000;
   if (timeStr.includes('d')) return Date.now() - num * 86400000;
   if (timeStr.includes('w')) return Date.now() - num * 604800000;
-  if (timeStr.includes('mo')) return Date.now() - num * 2592000000;
-  if (timeStr.includes('y')) return Date.now() - num * 31536000000;
   return Date.now();
 }
 

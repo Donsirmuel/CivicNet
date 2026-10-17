@@ -63,6 +63,7 @@ export interface Issue {
   state: string;
   lga: string;
   ward: string;
+  is_anonymous?: boolean;
   created_by: User;
   assigned_to?: User;
   upvotes: number;
@@ -74,6 +75,7 @@ export interface Issue {
   escalation_level?: 'ward' | 'lga' | 'state' | 'federal';
   escalated_at?: string;
   days_waiting?: number;
+  has_official_reply?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -88,6 +90,7 @@ export interface Post {
   shares: number;
   image_url?: string;
   is_pinned: boolean;
+  is_anonymous?: boolean;
   comments_list?: Comment[];
   created_at: string;
   updated_at: string;
