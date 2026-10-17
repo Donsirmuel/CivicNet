@@ -9,6 +9,7 @@ from .models import (
     Issue,
     Message,
     Notification,
+    OfficialJurisdiction,
     Post,
     StatusHistory,
     UserProfile,
@@ -55,7 +56,7 @@ class IssueLifecycleTests(APITestCase):
     def setUp(self):
         self.citizen = User.objects.create_user('citizen', password='pw123456')
         self.official = User.objects.create_user('official', password='pw123456')
-        UserProfile.objects.create(user=self.official, role='official', is_verified=True)
+        UserProfile.objects.create(user=self.official, role='official', is_verified=True, state='Lagos')
         self.citizen_token = Token.objects.create(user=self.citizen)
         self.official_token = Token.objects.create(user=self.official)
 
@@ -70,8 +71,8 @@ class IssueLifecycleTests(APITestCase):
                 'title': 'Broken streetlight on Airport Road',
                 'description': 'Out since December.',
                 'category': 'safety',
-                'state': 'Edo',
-                'lga': 'Oredo',
+                'state': 'Lagos',
+                'lga': 'Ikeja',
             },
             format='json',
         )
@@ -125,7 +126,7 @@ class PermissionRegressionTests(APITestCase):
     def setUp(self):
         self.citizen = User.objects.create_user('citizen', password='pw123456')
         self.official = User.objects.create_user('official', password='pw123456')
-        UserProfile.objects.create(user=self.official, role='official', is_verified=True)
+        UserProfile.objects.create(user=self.official, role='official', is_verified=True, state='Lagos')
         self.citizen_token = Token.objects.create(user=self.citizen)
         self.official_token = Token.objects.create(user=self.official)
         self.issue = Issue.objects.create(
@@ -217,6 +218,32 @@ class PermissionRegressionTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_official_cannot_act_outside_their_area(self):
+        far_issue = Issue.objects.create(
+            title='Collapsed culvert in Kano',
+            description='Blocked for a month.',
+            state='Kano',
+            created_by=self.citizen,
+        )
+        self._as(self.official_token)
+        claim = self.client.post(f'/api/issues/{far_issue.id}/assign_to_me/')
+        self.assertEqual(claim.status_code, status.HTTP_403_FORBIDDEN)
+        update = self.client.post(
+            f'/api/issues/{far_issue.id}/update_status/',
+            {'status': 'under_review'},
+            format='json',
+        )
+        self.assertEqual(update.status_code, status.HTTP_403_FORBIDDEN)
+        escalate = self.client.post(f'/api/issues/{far_issue.id}/escalate/')
+        self.assertEqual(escalate.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_issue_payload_does_not_leak_email(self):
+        response = self.client.get('/api/issues/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        payload = response.data.get('results', response.data)
+        self.assertTrue(payload)
+        self.assertNotIn('email', payload[0]['created_by'])
+
 
 class CommentAndMessageTests(APITestCase):
     def setUp(self):
@@ -270,7 +297,7 @@ class EscalationTests(APITestCase):
     def setUp(self):
         self.citizen = User.objects.create_user('citizen', password='pw123456')
         self.official = User.objects.create_user('official', password='pw123456')
-        UserProfile.objects.create(user=self.official, role='official', is_verified=True)
+        UserProfile.objects.create(user=self.official, role='official', is_verified=True, state='Lagos')
         self.citizen_token = Token.objects.create(user=self.citizen)
         self.official_token = Token.objects.create(user=self.official)
         self.issue = Issue.objects.create(
@@ -347,6 +374,10 @@ class VerificationRequestTests(APITestCase):
         self.assertEqual(
             VerificationRequest.objects.get(pk=request_id).status, 'approved'
         )
+        # Approving records a jurisdiction so area scoping can work.
+        self.assertTrue(
+            OfficialJurisdiction.objects.filter(official=self.citizen).exists()
+        )
 
     def test_non_staff_approve_returns_403(self):
         vr = VerificationRequest.objects.create(
@@ -402,4 +433,68 @@ class PasswordResetTests(APITestCase):
         )
         self.assertEqual(login.status_code, status.HTTP_200_OK)
         self.assertIn('token', login.data)
+
+
+class TokenRotationTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user('rotator', password='pw123456')
+
+    def test_login_issues_fresh_token_and_retires_the_old_one(self):
+        first = self.client.post(
+            '/api/api-token-auth/',
+            {'username': 'rotator', 'password': 'pw123456'},
+            format='json',
+        )
+        self.assertEqual(first.status_code, status.HTTP_200_OK)
+        second = self.client.post(
+            '/api/api-token-auth/',
+            {'username': 'rotator', 'password': 'pw123456'},
+            format='json',
+        )
+        self.assertEqual(second.status_code, status.HTTP_200_OK)
+        self.assertNotEqual(first.data['token'], second.data['token'])
+
+        # The token from the first login must no longer authenticate.
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {first.data['token']}")
+        self.assertEqual(
+            self.client.get('/api/users/me/').status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+
+class AutoEscalateTests(APITestCase):
+    def setUp(self):
+        self.citizen = User.objects.create_user('citizen', password='pw123456')
+
+    def test_auto_escalate_is_bounded_and_idempotent(self):
+        from datetime import timedelta
+        from django.utils import timezone
+
+        issue = Issue.objects.create(
+            title='Refuse uncollected for two months',
+            description='Market Road.',
+            state='Lagos',
+            created_by=self.citizen,
+        )
+        Issue.objects.filter(pk=issue.pk).update(
+            created_at=timezone.now() - timedelta(days=60)
+        )
+
+        self.assertEqual(Issue.auto_escalate(threshold_days=14), 1)
+        issue.refresh_from_db()
+        self.assertEqual(issue.escalation_level, 'lga')
+
+        # A second run right away must not move it again.
+        self.assertEqual(Issue.auto_escalate(threshold_days=14), 0)
+
+        # Even after many stale cycles it stops at federal.
+        for _ in range(6):
+            Issue.objects.filter(pk=issue.pk).update(
+                escalated_at=timezone.now() - timedelta(days=30)
+            )
+            Issue.auto_escalate(threshold_days=14)
+        issue.refresh_from_db()
+        self.assertEqual(issue.escalation_level, 'federal')
+        # Exactly three steps: lga, state, federal.
+        self.assertEqual(StatusHistory.objects.filter(issue=issue).count(), 3)
 

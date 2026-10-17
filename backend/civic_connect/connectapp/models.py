@@ -129,43 +129,55 @@ class Issue(models.Model):
 
     @classmethod
     def auto_escalate(cls, threshold_days=14):
-        """Escalate reported/under_review issues with no official reply older than threshold one step."""
+        """Escalate stale, unanswered issues by one step — never past federal.
+
+        Idempotent: an issue is only touched when it has not been escalated
+        within the threshold window, so repeated runs do not climb the ladder.
+        """
         from django.utils import timezone
         from datetime import timedelta
+        from django.db import transaction
+        from django.db.models import Q
         cutoff = timezone.now() - timedelta(days=threshold_days)
-        candidates = cls.objects.filter(
-            status__in=['reported', 'under_review'],
-            created_at__lte=cutoff,
-        )
         escalated = 0
-        for issue in candidates:
-            # Skip issues that already received an official reply
-            # (a StatusHistory row written by a verified official or staff).
-            histories = issue.status_history.select_related('updated_by__profile').all()
-            has_official_reply = False
-            for h in histories:
-                updater = h.updated_by
-                if updater is None:
-                    continue
-                if updater.is_staff:
-                    has_official_reply = True
-                    break
-                profile = getattr(updater, 'profile', None)
-                if profile and profile.role == 'official' and profile.is_verified:
-                    has_official_reply = True
-                    break
-            if has_official_reply:
-                continue
-            if issue.status in ('resolved', 'closed'):
-                continue
-            issue.escalate_one_step()
-            StatusHistory.objects.create(
-                issue=issue,
-                status=issue.status,
-                updated_by=None,
-                note=f"Escalated to {issue.escalation_level}",
+        with transaction.atomic():
+            candidates = (
+                cls.objects.select_for_update()
+                .filter(
+                    status__in=['reported', 'under_review'],
+                    escalation_level__in=['ward', 'lga', 'state'],
+                    created_at__lte=cutoff,
+                )
+                .filter(Q(escalated_at__isnull=True) | Q(escalated_at__lte=cutoff))
             )
-            escalated += 1
+            for issue in candidates:
+                # Skip issues that already received an official reply. An
+                # escalation row is not a reply, so it is excluded.
+                histories = issue.status_history.select_related('updated_by__profile').all()
+                has_official_reply = False
+                for h in histories:
+                    if (h.note or '').strip().lower().startswith('escalated to '):
+                        continue
+                    updater = h.updated_by
+                    if updater is None:
+                        continue
+                    if updater.is_staff:
+                        has_official_reply = True
+                        break
+                    profile = getattr(updater, 'profile', None)
+                    if profile and profile.role == 'official' and profile.is_verified:
+                        has_official_reply = True
+                        break
+                if has_official_reply:
+                    continue
+                issue.escalate_one_step()
+                StatusHistory.objects.create(
+                    issue=issue,
+                    status=issue.status,
+                    updated_by=None,
+                    note=f"Escalated to {issue.escalation_level}",
+                )
+                escalated += 1
         return escalated
 
 

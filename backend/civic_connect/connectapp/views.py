@@ -3,7 +3,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
+from rest_framework.throttling import ScopedRateThrottle
 from django.conf import settings
+from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.db.models import F
@@ -15,10 +17,36 @@ from google.oauth2 import id_token as google_id_token
 from google.auth.transport import requests as google_requests
 from .models import UserProfile, Issue, Post, Comment, Message, Notification, BookmarkedItem, StatusHistory, OfficialJurisdiction, VerificationRequest
 from .serializers import (
-    UserSerializer, UserProfileSerializer, IssueSerializer, PostSerializer,
+    UserSerializer, PublicUserSerializer, UserProfileSerializer, IssueSerializer, PostSerializer,
     CommentSerializer, MessageSerializer, NotificationSerializer, BookmarkedItemSerializer, StatusHistorySerializer, OfficialJurisdictionSerializer,
     VerificationRequestSerializer
 )
+
+
+class LoginView(APIView):
+    """Username/password login that always issues a fresh token.
+
+    DRF's obtain_auth_token reuses the existing Token row on every login, so a
+    token's age (and therefore its expiry, see ExpiringTokenAuthentication)
+    was measured from the first-ever login. Rotating on each login fixes that.
+    """
+
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'auth'
+
+    def post(self, request):
+        username = (request.data.get('username') or '').strip()
+        password = request.data.get('password') or ''
+        user = authenticate(request, username=username, password=password)
+        if user is None:
+            return Response(
+                {'error': 'Incorrect username or password.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        Token.objects.filter(user=user).delete()
+        token = Token.objects.create(user=user)
+        return Response({'token': token.key})
 
 
 class GoogleAuthView(APIView):
@@ -30,6 +58,8 @@ class GoogleAuthView(APIView):
     """
 
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'auth'
 
     def post(self, request):
         raw_token = request.data.get('id_token')
@@ -60,14 +90,14 @@ class GoogleAuthView(APIView):
                 {'error': 'Google account has no email address'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if claims.get('email_verified') is False:
+        if claims.get('email_verified') is not True:
             return Response(
                 {'error': 'Google email is not verified'},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        email = claims['email']
-        existing = User.objects.filter(email=email).first()
+        email = claims['email'].strip().lower()
+        existing = User.objects.filter(email__iexact=email).first()
         if existing is not None and existing.has_usable_password():
             return Response(
                 {'error': 'An account with this email already uses a password. Sign in with your password instead.'},
@@ -93,7 +123,8 @@ class GoogleAuthView(APIView):
             },
         )
 
-        token, _ = Token.objects.get_or_create(user=user)
+        Token.objects.filter(user=user).delete()
+        token = Token.objects.create(user=user)
         return Response({'token': token.key, 'user': UserSerializer(user).data})
 
     @staticmethod
@@ -115,6 +146,8 @@ class PasswordResetRequestView(APIView):
     cannot enumerate which email addresses have accounts."""
 
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'password_reset'
 
     def post(self, request):
         email = (request.data.get('email') or '').strip()
@@ -124,7 +157,10 @@ class PasswordResetRequestView(APIView):
                 uid = urlsafe_base64_encode(force_bytes(user.pk))
                 token = default_token_generator.make_token(user)
                 reset_path = f'/forgot-password?uid={uid}&token={token}'
-                logger.info('Password reset requested for user %s: %s', user.pk, reset_path)
+                if settings.DEBUG:
+                    # No mail backend in development: surface the link locally
+                    # only. Never log a live token when running for real.
+                    logger.info('Password reset link for user %s: %s', user.pk, reset_path)
         return Response(
             {'detail': 'If an account exists for that email, a reset link has been sent.'},
             status=status.HTTP_200_OK,
@@ -135,6 +171,8 @@ class PasswordResetConfirmView(APIView):
     """Set a new password with a valid reset uid/token pair."""
 
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'password_reset'
 
     def post(self, request):
         uid = request.data.get('uid') or ''
@@ -165,6 +203,8 @@ class PasswordResetConfirmView(APIView):
             )
         user.set_password(new_password)
         user.save(update_fields=['password'])
+        # Invalidate any sessions issued before the reset.
+        Token.objects.filter(user=user).delete()
         return Response({'detail': 'Your password has been reset.'}, status=status.HTTP_200_OK)
 
 
@@ -185,23 +225,6 @@ def _notify(user, notification_type, title, message, actor=None, post=None, issu
     )
 
 
-class IsAssignedOfficialOrReadOnly(permissions.BasePermission):
-    """
-    Permission to allow officials to update only issues assigned to them.
-    """
-
-    def has_object_permission(self, request, view, obj):
-        # Read permissions are allowed to any request
-        if request.method in permissions.SAFE_METHODS:
-            return True
-
-        # Write permissions are only allowed to the official assigned to the issue
-        if hasattr(obj, 'assigned_to'):
-            return obj.assigned_to == request.user
-
-        return False
-
-
 def _is_verified_official(user):
     """True when the user holds a verified official profile (or is staff)."""
     if not user or not user.is_authenticated:
@@ -212,6 +235,59 @@ def _is_verified_official(user):
     return bool(profile and profile.role == 'official' and profile.is_verified)
 
 
+def _normalize_place(value):
+    return (value or '').strip().lower()
+
+
+def _official_scope(user):
+    """The area a verified official is responsible for.
+
+    Returns a dict with ``level``/``state``/``lga``/``ward`` (lower-cased),
+    ``None`` when the user is staff (unrestricted), or the string ``'unset'``
+    when no area has been recorded and the official must not act.
+    """
+    if user.is_staff:
+        return None
+    jurisdiction = getattr(user, 'jurisdiction', None)
+    if jurisdiction is not None and (jurisdiction.state or jurisdiction.lga or jurisdiction.ward):
+        return {
+            'level': jurisdiction.jurisdiction_level or 'ward',
+            'state': _normalize_place(jurisdiction.state),
+            'lga': _normalize_place(jurisdiction.lga),
+            'ward': _normalize_place(jurisdiction.ward),
+        }
+    profile = getattr(user, 'profile', None)
+    if profile is not None and (profile.state or profile.lga or profile.ward):
+        return {
+            'level': profile.jurisdiction_type or 'ward',
+            'state': _normalize_place(profile.state),
+            'lga': _normalize_place(profile.lga),
+            'ward': _normalize_place(profile.ward),
+        }
+    return 'unset'
+
+
+def _issue_in_scope(user, issue):
+    """True when this official may act on this issue, judged by area.
+
+    Staff pass. Officials with no recorded area fail closed. Otherwise the
+    issue's state must match, and LGA/ward must match too when the official's
+    level is that narrow.
+    """
+    scope = _official_scope(user)
+    if scope is None:      # staff
+        return True
+    if scope == 'unset':   # nothing on record: do not let them act
+        return False
+    if scope['state'] and scope['state'] != _normalize_place(issue.state):
+        return False
+    if scope['level'] in ('lga', 'ward') and scope['lga'] and scope['lga'] != _normalize_place(issue.lga):
+        return False
+    if scope['level'] == 'ward' and scope['ward'] and scope['ward'] != _normalize_place(issue.ward):
+        return False
+    return True
+
+
 class IsVerifiedOfficial(permissions.BasePermission):
     """Only verified officials (or staff) may change issue state/assignment."""
 
@@ -219,6 +295,17 @@ class IsVerifiedOfficial(permissions.BasePermission):
 
     def has_permission(self, request, view):
         return _is_verified_official(request.user)
+
+
+class IsVerifiedOfficialInJurisdiction(IsVerifiedOfficial):
+    """A verified official may only act inside their own area of responsibility."""
+
+    message = 'This report is outside your area of responsibility.'
+
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return _issue_in_scope(request.user, obj)
 
 
 class IsSelfOrAdminOrReadOnly(permissions.BasePermission):
@@ -304,6 +391,13 @@ class UserViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['username', 'first_name', 'last_name']
 
+    def get_serializer_class(self):
+        # Public listing/search (for starting conversations) exposes only
+        # non-sensitive fields; the owner's own account uses the full one.
+        if self.action in ('me', 'create', 'update', 'partial_update'):
+            return UserSerializer
+        return PublicUserSerializer
+
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def me(self, request):
         serializer = self.get_serializer(request.user)
@@ -365,7 +459,9 @@ class UserProfileViewSet(viewsets.ModelViewSet):
 
 
 class PostViewSet(viewsets.ModelViewSet):
-    queryset = Post.objects.all()
+    queryset = Post.objects.select_related('author').prefetch_related(
+        'comments_list__author', 'comments_list__replies__author'
+    )
     serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
@@ -400,7 +496,11 @@ class PostViewSet(viewsets.ModelViewSet):
 
 
 class IssueViewSet(viewsets.ModelViewSet):
-    queryset = Issue.objects.all()
+    queryset = Issue.objects.select_related('created_by', 'assigned_to').prefetch_related(
+        'comments_list__author',
+        'comments_list__replies__author',
+        'status_history__updated_by',
+    )
     serializer_class = IssueSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsCreatorOrAssignedOfficialOrReadOnly]
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
@@ -464,7 +564,7 @@ class IssueViewSet(viewsets.ModelViewSet):
         )
         return Response({'status': 'issue liked', 'upvotes': issue.upvotes})
 
-    @action(detail=True, methods=['post'], permission_classes=[IsVerifiedOfficial])
+    @action(detail=True, methods=['post'], permission_classes=[IsVerifiedOfficialInJurisdiction])
     def update_status(self, request, pk=None):
         issue = self.get_object()
         new_status = request.data.get('status')
@@ -506,7 +606,7 @@ class IssueViewSet(viewsets.ModelViewSet):
 
         return Response({'status': 'issue status updated', 'new_status': new_status})
 
-    @action(detail=True, methods=['post'], permission_classes=[IsVerifiedOfficial])
+    @action(detail=True, methods=['post'], permission_classes=[IsVerifiedOfficialInJurisdiction])
     def assign(self, request, pk=None):
         issue = self.get_object()
         assigned_to_id = request.data.get('assigned_to_id')
@@ -514,7 +614,13 @@ class IssueViewSet(viewsets.ModelViewSet):
             assigned_to = get_object_or_404(User, id=assigned_to_id)
             if not _is_verified_official(assigned_to):
                 return Response(
-                    {'error': 'Only a verified office can take this report'},
+                    {'error': 'Only a verified official can take this report'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            target_scope = _official_scope(assigned_to)
+            if target_scope not in (None, 'unset') and not _issue_in_scope(assigned_to, issue):
+                return Response(
+                    {'error': "That office is outside this report's area."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             issue.assigned_to = assigned_to
@@ -530,7 +636,7 @@ class IssueViewSet(viewsets.ModelViewSet):
             return Response({'status': 'issue assigned', 'assigned_to': assigned_to.username})
         return Response({'error': 'Choose an office to handle this report'}, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['post'], permission_classes=[IsVerifiedOfficial])
+    @action(detail=True, methods=['post'], permission_classes=[IsVerifiedOfficialInJurisdiction])
     def assign_to_me(self, request, pk=None):
         issue = self.get_object()
         issue.assigned_to = request.user
@@ -569,9 +675,10 @@ class IssueViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(issues, many=True)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'], permission_classes=[IsVerifiedOfficial])
+    @action(detail=True, methods=['post'], permission_classes=[IsVerifiedOfficialInJurisdiction])
     def escalate(self, request, pk=None):
         from django.utils import timezone
+        from django.db import transaction
         issue = self.get_object()
         if issue.status in ('resolved', 'closed'):
             return Response(
@@ -579,17 +686,25 @@ class IssueViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         order = Issue.ESCALATION_ORDER
-        idx = order.index(issue.escalation_level) if issue.escalation_level in order else 0
-        new_level = order[min(idx + 1, len(order) - 1)]
-        issue.escalation_level = new_level
-        issue.escalated_at = timezone.now()
-        issue.save(update_fields=['escalation_level', 'escalated_at', 'updated_at'])
-        StatusHistory.objects.create(
-            issue=issue,
-            status=issue.status,
-            updated_by=request.user,
-            note=f"Escalated to {new_level}",
-        )
+        with transaction.atomic():
+            locked = Issue.objects.select_for_update().get(pk=issue.pk)
+            idx = order.index(locked.escalation_level) if locked.escalation_level in order else 0
+            if idx >= len(order) - 1:
+                return Response(
+                    {'error': 'This report is already at the highest level.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            new_level = order[idx + 1]
+            locked.escalation_level = new_level
+            locked.escalated_at = timezone.now()
+            locked.save(update_fields=['escalation_level', 'escalated_at', 'updated_at'])
+            StatusHistory.objects.create(
+                issue=locked,
+                status=locked.status,
+                updated_by=request.user,
+                note=f"Escalated to {new_level}",
+            )
+        issue.refresh_from_db()
         _notify(
             issue.created_by,
             'mention',
@@ -804,7 +919,28 @@ class VerificationRequestViewSet(viewsets.ModelViewSet):
             profile, _ = UserProfile.objects.get_or_create(user=verification.user)
             profile.role = 'official'
             profile.is_verified = True
-            profile.save(update_fields=['role', 'is_verified', 'updated_at'])
+            if verification.state:
+                profile.state = verification.state
+            if verification.lga:
+                profile.lga = verification.lga
+            if verification.ward:
+                profile.ward = verification.ward
+            if verification.jurisdiction:
+                profile.jurisdiction_type = verification.jurisdiction
+            profile.save(update_fields=[
+                'role', 'is_verified', 'state', 'lga', 'ward',
+                'jurisdiction_type', 'updated_at',
+            ])
+            # Record the area so jurisdiction scoping has something to check.
+            OfficialJurisdiction.objects.update_or_create(
+                official=verification.user,
+                defaults={
+                    'state': verification.state or '',
+                    'lga': verification.lga or '',
+                    'ward': verification.ward or '',
+                    'jurisdiction_level': verification.jurisdiction or 'ward',
+                },
+            )
         else:
             verification.status = 'rejected'
             verification.save(update_fields=['status'])

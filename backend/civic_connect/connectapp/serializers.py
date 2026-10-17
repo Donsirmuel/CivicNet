@@ -53,8 +53,17 @@ class UserSerializer(serializers.ModelSerializer):
         return instance
 
 
+class PublicUserSerializer(serializers.ModelSerializer):
+    """Safe user view for public payloads — no email, no password."""
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'first_name', 'last_name']
+        read_only_fields = ['id', 'username', 'first_name', 'last_name']
+
+
 class UserProfileSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
+    user = PublicUserSerializer(read_only=True)
 
     class Meta:
         model = UserProfile
@@ -67,7 +76,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    author = UserSerializer(read_only=True)
+    author = PublicUserSerializer(read_only=True)
     replies = serializers.SerializerMethodField()
     post_id = serializers.PrimaryKeyRelatedField(
         queryset=Post.objects.all(), source='post', write_only=True, required=False,
@@ -119,7 +128,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class StatusHistorySerializer(serializers.ModelSerializer):
-    updated_by = UserSerializer(read_only=True)
+    updated_by = PublicUserSerializer(read_only=True)
 
     class Meta:
         model = StatusHistory
@@ -128,7 +137,7 @@ class StatusHistorySerializer(serializers.ModelSerializer):
 
 
 class PostSerializer(serializers.ModelSerializer):
-    author = UserSerializer(read_only=True)
+    author = PublicUserSerializer(read_only=True)
     comments_list = CommentSerializer(many=True, read_only=True)
 
     class Meta:
@@ -138,8 +147,8 @@ class PostSerializer(serializers.ModelSerializer):
 
 
 class IssueSerializer(serializers.ModelSerializer):
-    created_by = UserSerializer(read_only=True)
-    assigned_to = UserSerializer(read_only=True)
+    created_by = PublicUserSerializer(read_only=True)
+    assigned_to = PublicUserSerializer(read_only=True)
     comments_list = CommentSerializer(many=True, read_only=True)
     status_history = StatusHistorySerializer(many=True, read_only=True)
     days_waiting = serializers.IntegerField(read_only=True)
@@ -153,8 +162,8 @@ class IssueSerializer(serializers.ModelSerializer):
 
 
 class MessageSerializer(serializers.ModelSerializer):
-    sender = UserSerializer(read_only=True)
-    receiver = UserSerializer(read_only=True)
+    sender = PublicUserSerializer(read_only=True)
+    receiver = PublicUserSerializer(read_only=True)
     receiver_id = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(), source='receiver', write_only=True
     )
@@ -181,8 +190,8 @@ class MessageSerializer(serializers.ModelSerializer):
 
 
 class NotificationSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-    actor = UserSerializer(read_only=True)
+    user = PublicUserSerializer(read_only=True)
+    actor = PublicUserSerializer(read_only=True)
     actor_role = serializers.SerializerMethodField()
 
     class Meta:
@@ -203,7 +212,7 @@ class BookmarkedItemSerializer(serializers.ModelSerializer):
 
 
 class OfficialJurisdictionSerializer(serializers.ModelSerializer):
-    official = UserSerializer(read_only=True)
+    official = PublicUserSerializer(read_only=True)
 
     class Meta:
         model = OfficialJurisdiction
