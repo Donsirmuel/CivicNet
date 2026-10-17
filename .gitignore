@@ -53,3 +53,6 @@ backend/*.md
 *.tmp
 *.temp
 .cache/
+
+# Design references (local only)
+*landing-selection.pdf
