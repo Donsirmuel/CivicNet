@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Icon } from '../common';
 import LocationSelector from './LocationSelector';
+import { getLocationString } from '../../data/locationData';
 import { authService } from '../../services';
 import type { IssueCategory } from './PostCard';
 
@@ -199,7 +200,7 @@ export default function PostComposer({ onPostSubmit, onIssueSubmit }: PostCompos
           <div className="flex flex-wrap gap-2">
             <span className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-[#0a6a3b] px-3 text-[12px] font-semibold text-[#0a6a3b]">
               <Icon name="location_on" className="text-[15px]" />
-              {location ? `${location.ward}, ${location.lga}` : 'Add location'}
+              {location ? getLocationString(location) : 'Add location'}
             </span>
             <span className="inline-flex min-h-8 items-center rounded-full border border-dashed border-[var(--civic-border-strong)] px-3 text-[12px] font-medium text-[var(--civic-muted)]">
               Category{activeCategoryLabel ? `: ${activeCategoryLabel}` : ''}
