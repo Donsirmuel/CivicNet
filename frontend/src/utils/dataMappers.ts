@@ -170,3 +170,15 @@ export const daysBetween = (fromIso: string, toIso?: string): number | null => {
   const diffDays = Math.floor((to.getTime() - from.getTime()) / 86400000);
   return Math.max(1, diffDays);
 };
+
+/**
+ * Day N accountability counter — the day the report was filed counts as Day 1.
+ * Null on invalid input.
+ */
+export const getDayNFromDate = (createdAt: string | Date): number | null => {
+  const created = createdAt instanceof Date ? createdAt : new Date(createdAt);
+  const time = created.getTime();
+  if (Number.isNaN(time)) return null;
+  const elapsedDays = Math.floor((Date.now() - time) / 86400000);
+  return Math.max(1, elapsedDays + 1);
+};

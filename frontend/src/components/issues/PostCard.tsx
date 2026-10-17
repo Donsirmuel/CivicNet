@@ -94,7 +94,7 @@ const ESCALATION_LABELS: Record<NonNullable<Post['escalationLevel']>, string> = 
 
 const STATUS_STEPS = ['Reported', 'Seen', 'Assigned', 'In progress', 'Resolved'] as const;
 
-export function getIssueStepIndex(issueStatus?: IssueStatus, assignedTo?: Post['assignedTo']): number {
+function getIssueStepIndex(issueStatus?: IssueStatus, assignedTo?: Post['assignedTo']): number {
   let base: number;
   switch (issueStatus) {
     case 'under_review':
@@ -119,7 +119,7 @@ export function getIssueStepIndex(issueStatus?: IssueStatus, assignedTo?: Post['
 }
 
 /** Day N accountability counter — parsed from backend days_waiting or relative timestamp. */
-export function parseRelativeTimestampToDay(timestamp: string): number | null {
+function parseRelativeTimestampToDay(timestamp: string): number | null {
   const text = timestamp.toLowerCase().trim();
   if (!text) return null;
   if (text.includes('just now') || text === 'now' || text.includes('a moment ago')) return 1;

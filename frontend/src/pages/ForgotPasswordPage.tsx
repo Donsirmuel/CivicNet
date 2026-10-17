@@ -13,8 +13,8 @@ export default function ForgotPasswordPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
-  const [uid, setUid] = useState(searchParams.get('uid') ?? '');
-  const [token, setToken] = useState(searchParams.get('token') ?? '');
+  const uid = searchParams.get('uid') ?? '';
+  const token = searchParams.get('token') ?? '';
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [requestSent, setRequestSent] = useState(false);

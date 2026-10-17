@@ -2,11 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Icon } from '../components/common';
 import type { IssueStatus } from '../components/issues/PostCard';
-import { getDayNFromDate } from '../components/issues/PostCard';
 import StandardLayout from '../layouts/StandardLayout';
 import { getLocationString } from '../data/locationData';
 import { commentsService, issuesService, usersService } from '../services';
-import { convertIssueToPost, daysBetween, formatTime } from '../utils/dataMappers';
+import { convertIssueToPost, daysBetween, formatTime, getDayNFromDate } from '../utils/dataMappers';
 import type { Comment as ApiComment, Issue, StatusHistory, User } from '../types';
 
 const statusConfig: Record<IssueStatus, { label: string; icon: string; color: string }> = {
