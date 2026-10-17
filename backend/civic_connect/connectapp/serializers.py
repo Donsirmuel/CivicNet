@@ -3,6 +3,10 @@ from django.contrib.auth.models import User
 from .models import UserProfile, Issue, Post, Comment, Message, Notification, BookmarkedItem, StatusHistory, OfficialJurisdiction, VerificationRequest
 
 
+# Placeholder shown in public payloads for a report/update posted anonymously.
+ANONYMOUS_AUTHOR = {'id': None, 'username': 'anonymous', 'first_name': '', 'last_name': ''}
+
+
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False, allow_blank=True)
     email = serializers.CharField(required=False, allow_blank=True)
@@ -54,12 +58,32 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class PublicUserSerializer(serializers.ModelSerializer):
-    """Safe user view for public payloads — no email, no password."""
+    """Safe user view for public payloads — no email, no password.
+
+    ``role`` and ``jurisdiction`` come from the profile so the feed can mark
+    official authors and name the office a reply came from.
+    """
+
+    role = serializers.SerializerMethodField()
+    jurisdiction = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'first_name', 'last_name']
-        read_only_fields = ['id', 'username', 'first_name', 'last_name']
+        fields = ['id', 'username', 'first_name', 'last_name', 'role', 'jurisdiction']
+        read_only_fields = fields
+
+    def get_role(self, obj):
+        if obj.is_staff:
+            return 'official'
+        profile = getattr(obj, 'profile', None)
+        return profile.role if profile else 'citizen'
+
+    def get_jurisdiction(self, obj):
+        profile = getattr(obj, 'profile', None)
+        if profile is None:
+            return ''
+        parts = [profile.ward, profile.lga, profile.state]
+        return ', '.join(part for part in parts if part)
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -142,8 +166,14 @@ class PostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = ['id', 'content', 'author', 'likes', 'comments', 'shares', 'image_url', 'is_pinned', 'comments_list', 'created_at', 'updated_at']
+        fields = ['id', 'content', 'author', 'likes', 'comments', 'shares', 'image_url', 'is_pinned', 'is_anonymous', 'comments_list', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at', 'author', 'likes', 'comments', 'shares', 'is_pinned']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if instance.is_anonymous:
+            data['author'] = ANONYMOUS_AUTHOR
+        return data
 
 
 class IssueSerializer(serializers.ModelSerializer):
@@ -152,13 +182,38 @@ class IssueSerializer(serializers.ModelSerializer):
     comments_list = CommentSerializer(many=True, read_only=True)
     status_history = StatusHistorySerializer(many=True, read_only=True)
     days_waiting = serializers.IntegerField(read_only=True)
+    has_official_reply = serializers.SerializerMethodField()
 
     class Meta:
         model = Issue
-        fields = ['id', 'title', 'description', 'category', 'status', 'scope', 'priority', 'state', 'lga', 'ward', 'created_by', 'assigned_to', 'upvotes', 'downvotes', 'comment_count', 'image_url', 'comments_list', 'status_history', 'escalation_level', 'escalated_at', 'days_waiting', 'created_at', 'updated_at']
+        fields = ['id', 'title', 'description', 'category', 'status', 'scope', 'priority', 'state', 'lga', 'ward', 'is_anonymous', 'created_by', 'assigned_to', 'upvotes', 'downvotes', 'comment_count', 'image_url', 'comments_list', 'status_history', 'escalation_level', 'escalated_at', 'days_waiting', 'has_official_reply', 'created_at', 'updated_at']
         # status moves through update_status (writes history + notifies);
         # assignment moves through assign / assign_to_me.
-        read_only_fields = ['id', 'created_at', 'updated_at', 'created_by', 'status', 'assigned_to', 'upvotes', 'downvotes', 'comment_count', 'status_history', 'escalation_level', 'escalated_at', 'days_waiting']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'created_by', 'status', 'assigned_to', 'upvotes', 'downvotes', 'comment_count', 'status_history', 'escalation_level', 'escalated_at', 'days_waiting', 'has_official_reply']
+
+    def get_has_official_reply(self, obj):
+        """True when a verified official (or staff) has written a real reply.
+
+        Escalation rows are not replies, so they are ignored.
+        """
+        for h in obj.status_history.all():
+            if (h.note or '').strip().lower().startswith('escalated to '):
+                continue
+            updater = h.updated_by
+            if updater is None:
+                continue
+            if updater.is_staff:
+                return True
+            profile = getattr(updater, 'profile', None)
+            if profile and profile.role == 'official' and profile.is_verified:
+                return True
+        return False
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if instance.is_anonymous:
+            data['created_by'] = ANONYMOUS_AUTHOR
+        return data
 
 
 class MessageSerializer(serializers.ModelSerializer):

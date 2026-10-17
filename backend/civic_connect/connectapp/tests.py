@@ -498,3 +498,58 @@ class AutoEscalateTests(APITestCase):
         # Exactly three steps: lga, state, federal.
         self.assertEqual(StatusHistory.objects.filter(issue=issue).count(), 3)
 
+
+class AnonymityTests(APITestCase):
+    def setUp(self):
+        self.citizen = User.objects.create_user('citizen', password='pw123456')
+        self.token = Token.objects.create(user=self.citizen)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
+
+    def test_anonymous_issue_hides_the_reporter(self):
+        created = self.client.post(
+            '/api/issues/',
+            {
+                'title': 'Illegal dumping on our street',
+                'description': 'People dump refuse here at night.',
+                'state': 'Lagos',
+                'is_anonymous': True,
+            },
+            format='json',
+        )
+        self.assertEqual(created.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(created.data['is_anonymous'])
+        self.assertEqual(created.data['created_by']['username'], 'anonymous')
+
+        listed = self.client.get('/api/issues/')
+        payload = listed.data.get('results', listed.data)
+        row = next(r for r in payload if r['id'] == created.data['id'])
+        self.assertEqual(row['created_by']['username'], 'anonymous')
+
+
+class OfficialReplyFlagTests(APITestCase):
+    def setUp(self):
+        self.citizen = User.objects.create_user('citizen', password='pw123456')
+        self.official = User.objects.create_user('official', password='pw123456')
+        UserProfile.objects.create(
+            user=self.official, role='official', is_verified=True, state='Lagos'
+        )
+        self.citizen_token = Token.objects.create(user=self.citizen)
+        self.official_token = Token.objects.create(user=self.official)
+        self.issue = Issue.objects.create(
+            title='Street light out',
+            description='Dark at night.',
+            state='Lagos',
+            created_by=self.citizen,
+        )
+
+    def test_flag_is_false_then_true_after_an_official_replies(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.citizen_token}')
+        before = self.client.get(f'/api/issues/{self.issue.id}/')
+        self.assertFalse(before.data['has_official_reply'])
+
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.official_token}')
+        self.client.post(f'/api/issues/{self.issue.id}/assign_to_me/')
+
+        after = self.client.get(f'/api/issues/{self.issue.id}/')
+        self.assertTrue(after.data['has_official_reply'])
+

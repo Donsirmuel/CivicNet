@@ -459,7 +459,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
 
 
 class PostViewSet(viewsets.ModelViewSet):
-    queryset = Post.objects.select_related('author').prefetch_related(
+    queryset = Post.objects.select_related('author__profile').prefetch_related(
         'comments_list__author', 'comments_list__replies__author'
     )
     serializer_class = PostSerializer
@@ -496,10 +496,10 @@ class PostViewSet(viewsets.ModelViewSet):
 
 
 class IssueViewSet(viewsets.ModelViewSet):
-    queryset = Issue.objects.select_related('created_by', 'assigned_to').prefetch_related(
+    queryset = Issue.objects.select_related('created_by__profile', 'assigned_to__profile').prefetch_related(
         'comments_list__author',
         'comments_list__replies__author',
-        'status_history__updated_by',
+        'status_history__updated_by__profile',
     )
     serializer_class = IssueSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsCreatorOrAssignedOfficialOrReadOnly]

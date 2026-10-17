@@ -79,6 +79,9 @@ class Issue(models.Model):
     lga = models.CharField(max_length=100, blank=True)
     ward = models.CharField(max_length=100, blank=True)
 
+    # The reporter may keep their name off the public report.
+    is_anonymous = models.BooleanField(default=False)
+
     # User and official who is handling it
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='issues_created')
     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='issues_assigned')
@@ -249,6 +252,9 @@ class Post(models.Model):
     image_url = models.URLField(blank=True, null=True)
 
     is_pinned = models.BooleanField(default=False)
+
+    # The author may keep their name off the public update.
+    is_anonymous = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
